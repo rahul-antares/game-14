@@ -1,0 +1,241 @@
+name: rgs # Name allows up to host multiple projects on same machine
+
+services:
+  # Game Engine 11, RTP 96, without cheats
+  bdg736096:
+    build:
+      dockerfile: docker/services/game/Dockerfile
+      context: ../
+      args:
+        ALLOW_CHEATS: 'no'
+        VARIANT: '96'
+        RNG_VERSION: ${RNG_VERSION?:}
+      cache_from:
+        - bdg736096:latest
+    image: bdg736096:latest
+    restart: on-failure
+    expose:
+      - ${EXPRESS_PORT:?}
+    environment:
+      GAME_ID: ${GAME_ID?:}96
+      RNG_VERSION: ${RNG_VERSION?:}
+      NATS_HOST: ${NATS_HOST:?}
+      NATS_PORT: ${NATS_PORT:?}
+      NUM_THREADS: ${NUM_THREADS?:}
+      REQ_MAX_AGE: ${REQ_MAX_AGE?:}
+      ENABLE_EXPRESS: ${ENABLE_EXPRESS?:}
+      EXPRESS_PORT: ${EXPRESS_PORT?:}
+      RNG_MAX_RECORDS: ${RNG_MAX_RECORDS?:}
+      RNG_MAX_HOLD_TIME: ${RNG_MAX_HOLD_TIME?:}
+      RNG_MONITOR_CHANNEL: ${RNG_MONITOR_CHANNEL?:}
+    healthcheck:
+      disable: true
+    networks:
+      - rgs-net
+    volumes:
+      - "../rng/certified/librngapi-local.so.${RNG_VERSION}:/rng/lib/librngapi-local.so"
+
+  # Game Engine 11, RTP 96, with cheats
+  bdg736096wc:
+    build:
+      dockerfile: docker/services/game/Dockerfile
+      context: ../
+      args:
+        ALLOW_CHEATS: 'yes'
+        VARIANT: '96'
+        RNG_VERSION: ${RNG_VERSION?:}
+      cache_from:
+        - bdg736096wc:latest
+    image: bdg736096wc:latest
+    restart: on-failure
+    expose:
+      - ${EXPRESS_PORT:?}
+    environment:
+      GAME_ID: ${GAME_ID?:}96wc
+      RNG_VERSION: ${RNG_VERSION?:}
+      NATS_HOST: ${NATS_HOST:?}
+      NATS_PORT: ${NATS_PORT:?}
+      NUM_THREADS: ${NUM_THREADS?:}
+      REQ_MAX_AGE: ${REQ_MAX_AGE?:}
+      ENABLE_EXPRESS: ${ENABLE_EXPRESS?:}
+      EXPRESS_PORT: ${EXPRESS_PORT?:}
+      RNG_MAX_RECORDS: ${RNG_MAX_RECORDS?:}
+      RNG_MAX_HOLD_TIME: ${RNG_MAX_HOLD_TIME?:}
+      RNG_MONITOR_CHANNEL: ${RNG_MONITOR_CHANNEL?:}
+    healthcheck:
+      disable: true
+    networks:
+      - rgs-net
+    volumes:
+      - "../rng/certified/librngapi-local.so.${RNG_VERSION}:/rng/lib/librngapi-local.so"
+
+  # Game Engine 11, RTP 94, without cheats
+  bdg736094:
+    build:
+      dockerfile: docker/services/game/Dockerfile
+      context: ../
+      args:
+        ALLOW_CHEATS: 'no'
+        VARIANT: '94'
+        RNG_VERSION: ${RNG_VERSION?:}
+      cache_from:
+        - bdg736094:latest
+    image: bdg736094:latest
+    restart: on-failure
+    expose:
+      - ${EXPRESS_PORT:?}
+    environment:
+      GAME_ID: ${GAME_ID?:}94
+      RNG_VERSION: ${RNG_VERSION?:}
+      NATS_HOST: ${NATS_HOST:?}
+      NATS_PORT: ${NATS_PORT:?}
+      NUM_THREADS: ${NUM_THREADS?:}
+      REQ_MAX_AGE: ${REQ_MAX_AGE?:}
+      ENABLE_EXPRESS: ${ENABLE_EXPRESS?:}
+      EXPRESS_PORT: ${EXPRESS_PORT?:}
+      RNG_MAX_RECORDS: ${RNG_MAX_RECORDS?:}
+      RNG_MAX_HOLD_TIME: ${RNG_MAX_HOLD_TIME?:}
+      RNG_MONITOR_CHANNEL: ${RNG_MONITOR_CHANNEL?:}
+    healthcheck:
+      disable: true
+    networks:
+      - rgs-net
+    volumes:
+      - "../rng/certified/librngapi-local.so.${RNG_VERSION}:/rng/lib/librngapi-local.so"
+
+  # Game Engine 11, RTP 94, with cheats
+  bdg736094wc:
+    build:
+      dockerfile: docker/services/game/Dockerfile
+      context: ../
+      args:
+        ALLOW_CHEATS: 'yes'
+        VARIANT: '94'
+        RNG_VERSION: ${RNG_VERSION?:}
+      cache_from:
+        - bdg736094wc:latest
+    image: bdg736094wc:latest
+    restart: on-failure
+    expose:
+      - ${EXPRESS_PORT:?}
+    environment:
+      GAME_ID: ${GAME_ID?:}94wc
+      RNG_VERSION: ${RNG_VERSION?:}
+      NATS_HOST: ${NATS_HOST:?}
+      NATS_PORT: ${NATS_PORT:?}
+      NUM_THREADS: ${NUM_THREADS?:}
+      REQ_MAX_AGE: ${REQ_MAX_AGE?:}
+      ENABLE_EXPRESS: ${ENABLE_EXPRESS?:}
+      EXPRESS_PORT: ${EXPRESS_PORT?:}
+      RNG_MAX_RECORDS: ${RNG_MAX_RECORDS?:}
+      RNG_MAX_HOLD_TIME: ${RNG_MAX_HOLD_TIME?:}
+      RNG_MONITOR_CHANNEL: ${RNG_MONITOR_CHANNEL?:}
+    healthcheck:
+      disable: true
+    networks:
+      - rgs-net
+    volumes:
+      - "../rng/certified/librngapi-local.so.${RNG_VERSION}:/rng/lib/librngapi-local.so"
+
+  # Game Engine 11, RTP 92, without cheats
+  bdg736092:
+    build:
+      dockerfile: docker/services/game/Dockerfile
+      context: ../
+      args:
+        ALLOW_CHEATS: 'no'
+        VARIANT: '92'
+        RNG_VERSION: ${RNG_VERSION?:}
+      cache_from:
+        - bdg736092:latest
+    image: bdg736092:latest
+    restart: on-failure
+    expose:
+      - ${EXPRESS_PORT:?}
+    environment:
+      GAME_ID: ${GAME_ID?:}92
+      RNG_VERSION: ${RNG_VERSION?:}
+      NATS_HOST: ${NATS_HOST:?}
+      NATS_PORT: ${NATS_PORT:?}
+      NUM_THREADS: ${NUM_THREADS?:}
+      REQ_MAX_AGE: ${REQ_MAX_AGE?:}
+      ENABLE_EXPRESS: ${ENABLE_EXPRESS?:}
+      EXPRESS_PORT: ${EXPRESS_PORT?:}
+      RNG_MAX_RECORDS: ${RNG_MAX_RECORDS?:}
+      RNG_MAX_HOLD_TIME: ${RNG_MAX_HOLD_TIME?:}
+      RNG_MONITOR_CHANNEL: ${RNG_MONITOR_CHANNEL?:}
+    healthcheck:
+      disable: true
+    networks:
+      - rgs-net
+    volumes:
+      - "../rng/certified/librngapi-local.so.${RNG_VERSION}:/rng/lib/librngapi-local.so"
+
+  # Game Engine 11, RTP 92, with cheats
+  bdg736092wc:
+    build:
+      dockerfile: docker/services/game/Dockerfile
+      context: ../
+      args:
+        ALLOW_CHEATS: 'yes'
+        VARIANT: '92'
+        RNG_VERSION: ${RNG_VERSION?:}
+      cache_from:
+        - bdg736092wc:latest
+    image: bdg736092wc:latest
+    restart: on-failure
+    expose:
+      - ${EXPRESS_PORT:?}
+    environment:
+      GAME_ID: ${GAME_ID?:}92wc
+      RNG_VERSION: ${RNG_VERSION?:}
+      NATS_HOST: ${NATS_HOST:?}
+      NATS_PORT: ${NATS_PORT:?}
+      NUM_THREADS: ${NUM_THREADS?:}
+      REQ_MAX_AGE: ${REQ_MAX_AGE?:}
+      ENABLE_EXPRESS: ${ENABLE_EXPRESS?:}
+      EXPRESS_PORT: ${EXPRESS_PORT?:}
+      RNG_MAX_RECORDS: ${RNG_MAX_RECORDS?:}
+      RNG_MAX_HOLD_TIME: ${RNG_MAX_HOLD_TIME?:}
+      RNG_MONITOR_CHANNEL: ${RNG_MONITOR_CHANNEL?:}
+    healthcheck:
+      disable: true
+    networks:
+      - rgs-net
+    volumes:
+      - "../rng/certified/librngapi-local.so.${RNG_VERSION}:/rng/lib/librngapi-local.so"
+
+  # static-bdg736096:
+  #   build:
+  #     context: ../
+  #     dockerfile: docker/static/game/Dockerfile
+  #     args:
+  #       - GAME_PROXY_PREFIX=${GAME_STATIC_PROXY_PREFIX:?}/${GAME_ID:?}96
+  #       - GAME_LIB_CONFIG_URL=https://${HOST:?}${LAUNCHER_SERVER_PROXY_PREFIX:?}${GAME_LIB_CONFIG_EP:?}
+  #     cache_from:
+  #       - static-bdg736096:latest
+  #   image: static-bdg736096:latest
+  #   expose:
+  #     - 80
+  #   networks:
+  #     - rgs-net
+
+  # static-bdg736096wc:
+  #   build:
+  #     context: ../
+  #     dockerfile: docker/static/game/Dockerfile
+  #     args:
+  #       - GAME_PROXY_PREFIX=${GAME_STATIC_PROXY_PREFIX:?}/${GAME_ID:?}96wc
+  #       - GAME_LIB_CONFIG_URL=https://${HOST:?}${LAUNCHER_SERVER_PROXY_PREFIX:?}${GAME_LIB_CONFIG_EP:?}
+  #     cache_from:
+  #       - static-bdg736096wc:latest
+  #   image: static-bdg736096wc:latest
+  #   expose:
+  #     - 80
+  #   networks:
+  #     - rgs-net
+
+networks:
+  rgs-net:
+    name: rgs-net
+    external: true

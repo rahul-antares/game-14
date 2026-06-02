@@ -1,0 +1,5 @@
+{
+	"colorize": true,
+	"ignore": "pid,hostname,context",
+	"messageFormat": "[{context}] {msg}"
+}

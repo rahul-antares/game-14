@@ -1,0 +1,2183 @@
+diff --git a/core/scripts/cheats-list.txt b/core/scripts/cheats-list.txt
+index 0917103..472f684 100644
+--- a/core/scripts/cheats-list.txt
++++ b/core/scripts/cheats-list.txt
+@@ -1,9 +1,8 @@
+ --minWin 10
+ --minWin 200
+---minWin 10
+ 
+ --maxWin 10
+---maxWin 300
++--maxWin 200
+ 
+ --paylineWin 20
+ --paylineWin 1
+@@ -19,8 +18,7 @@
+ --winSymbol H2 --winSymbolCount 4
+ 
+ --minWin 100 --winSymbol H1
+---minWin 50 --winSymbol H1
+---winSymbolCount 4 --winSymbol H1 --excludeSymbol L8
++--minWin 50 --winSymbol H1 --winSymbolCount 4 --excludeSymbol H3
+ 
+ --reelset 1
+ --reelset 2
+@@ -29,16 +27,12 @@
+ --reelset 11
+ 
+ --coinValue 10
+---coinValue 50
+---coinValue 100
+---coinValue 500
+ --coinValue 1666
+ 
+ --numCoins -1
+ --numCoins 1
+ --numCoins 5
+---numCoins 10
+---numCoins 15
++--numCoins 50
+ 
+ --respin true
+ --respin true
+@@ -66,8 +60,6 @@
+ --numScatters 4
+ --numScatters 5
+ 
+---freespins true --numFeatures 1
+---freespins true --numFeatures 2
+ --freespins true --numFeatures 3
+ --freespins true --numFeatures 4
+ --freespins true --numFeatures 5
+@@ -77,14 +69,10 @@
+ --freespins true --features MORE_WILDS,START_ON_LEVEL_2
+ --freespins true --features MORE_WILDS,MORE_DYNAMITE
+ 
+---freespins true --minCollectionLevel 1
+---freespins true --minCollectionLevel 2
+ --freespins true --minCollectionLevel 3
+ --freespins true --minCollectionLevel 4
+ --freespins true --minCollectionLevel 5
+ 
+---freespins true --minCollectionLevel 1
+---freespins true --minCollectionLevel 2
+ --freespins true --maxCollectionLevel 3
+ --freespins true --maxCollectionLevel 4
+ --freespins true --maxCollectionLevel 5
+@@ -96,21 +84,12 @@
+ 
+ --freespins true --minFSWin 1000
+ --freespins true --minFSWin 2000
+---freespins true --minFSWin 3000
+---freespins true --minFSWin 4000
+---freespins true --minFSWin 5000
+ 
+---freespins true --maxFSWin 1000
+ --freespins true --maxFSWin 2000
+ --freespins true --maxFSWin 2100
+---freespins true --maxFSWin 3000
+---freespins true --maxFSWin 4000
+---freespins true --maxFSWin 5000
+ 
+ --freespins true --minFSWin 1000 --maxFSWin 2000
+---freespins true --minFSWin 2000 --maxFSWin 3000
+---freespins true --minFSWin 2000 --maxFSWin 3100
+---freespins true --minFSWin 3000 --maxFSWin 4100
++--freespins true --minFSWin 2000 --maxFSWin 2100
+ 
+ --freespins true --fsWildHook true
+ --freespins true --fsWildHook true
+diff --git a/core/scripts/cheats.sh b/core/scripts/cheats.sh
+index 20af480..2d68b2d 100755
+--- a/core/scripts/cheats.sh
++++ b/core/scripts/cheats.sh
+@@ -5,15 +5,8 @@ RED='\033[0;31m'
+ YELLOW='\033[1;33m'
+ BLUE='\033[0;34m'
+ CYAN='\033[0;36m'
+-GRAY='\033[0;90m'
+-BLINK='\033[5m'
+-DIM='\033[2m'
+-DIM_GRAY='\033[2;90m'
+ NC='\033[0m'
+ 
+-TICK="✓"
+-CROSS="✗"
+-
+ SUCCESS_COUNT=0
+ ERROR_COUNT=0
+ TOTAL_COUNT=0
+@@ -28,13 +21,12 @@ fi
+ 
+ CHEATS_FILE="$1"
+ 
++# file exists
+ if [ ! -f "$CHEATS_FILE" ]; then
+     echo -e "${RED}Error: File '$CHEATS_FILE' not found${NC}"
+     exit 1
+ fi
+ 
+-TOTAL_TESTS=$(grep -c . "$CHEATS_FILE")
+-
+ while IFS= read -r cheat || [ -n "$cheat" ]; do
+     # strip carriage returns
+     cheat=$(echo "$cheat" | tr -d '\r')
+@@ -44,41 +36,42 @@ while IFS= read -r cheat || [ -n "$cheat" ]; do
+         continue
+     fi
+ 
+-    CURRENT_TEST=$((TOTAL_COUNT + 1))
+-    FULL_COMMAND="$BASE_SCRIPT $cheat"
++    # status line
++    echo -e "${CYAN}So Far: ${GREEN}${SUCCESS_COUNT} Success${NC}, ${RED}${ERROR_COUNT} Error${NC}, ${BLUE}Total: ${TOTAL_COUNT}${NC}"
+ 
+-    echo -ne "${DIM_GRAY}[ ${NC}${GREEN}${SUCCESS_COUNT}${TICK}${NC}, ${RED}${ERROR_COUNT}${CROSS}${NC}${GRAY} ]${NC} ${DIM_GRAY}(${NC}${CURRENT_TEST}/${TOTAL_TESTS}${BLINK}${YELLOW}...${NC}${DIM_GRAY})${NC} ${FULL_COMMAND}"
++    # command being executed
++    FULL_COMMAND="$BASE_SCRIPT $cheat"
++    echo -e "${YELLOW}Executing:${NC} $FULL_COMMAND"
+ 
+     START_TIME=$(date +%s.%N)
+ 
+-    # stdin to /dev/null to prevent the command from consuming the file
++    # execution
++    # redirection of stdin to /dev/null to prevent the command from consuming the file
+     OUTPUT=$($FULL_COMMAND 2>&1 < /dev/null)
+     EXIT_STATUS=$?
+ 
+     END_TIME=$(date +%s.%N)
+     DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+ 
+-    # clear "executing..." line to reprint with result
+-    echo -ne "\r\033[K"
+-
+-    # succeeded or failed
+     if [ $EXIT_STATUS -eq 0 ]; then
+         ((SUCCESS_COUNT++))
+-        echo -ne "${DIM_GRAY}[ ${NC}${GREEN}${SUCCESS_COUNT}${TICK}${NC}, ${RED}${ERROR_COUNT}${CROSS}${NC}${GRAY} ]${NC} ${GREEN}(${CURRENT_TEST}/${TOTAL_TESTS}...${TICK})${NC} ${FULL_COMMAND}"
+-        echo ""
++        echo -e "${GREEN}Successful${NC} (${DURATION}s)"
+     else
+         ((ERROR_COUNT++))
+-        echo -ne "${DIM_GRAY}[ ${NC}${GREEN}${SUCCESS_COUNT}${TICK}${NC}, ${RED}${ERROR_COUNT}${CROSS}${NC}${GRAY} ]${NC} ${RED}(${CURRENT_TEST}/${TOTAL_TESTS}...${CROSS})${NC} ${FULL_COMMAND}"
+-        echo ""
+-        echo -e "${DIM_GRAY}$(echo "$OUTPUT" | tail -n 11 | head -n 4)${NC}"
++        echo -e "${RED}Failed${NC} (${DURATION}s)"
++        echo -e "${RED}$(echo "$OUTPUT" | tail -n 10)${NC}"
+     fi
+ 
+     ((TOTAL_COUNT++))
+ 
++    echo ""
++
+ done < "$CHEATS_FILE"
+ 
++# summary
++echo ""
+ echo ""
+ echo -e "${CYAN}Final Results:${NC}"
+-echo -e "${GREEN}Successful: ${SUCCESS_COUNT} ${TICK}${NC}"
+-echo -e "${RED}Failed: ${ERROR_COUNT} ${CROSS}${NC}"
++echo -e "${GREEN}Successful: ${SUCCESS_COUNT}${NC}"
++echo -e "${RED}Failed: ${ERROR_COUNT}${NC}"
+ echo -e "${BLUE}Total: ${TOTAL_COUNT}${NC}"
+diff --git a/core/scripts/modules/base-spin.js b/core/scripts/modules/base-spin.js
+index 66cfbee..ab74fa7 100644
+--- a/core/scripts/modules/base-spin.js
++++ b/core/scripts/modules/base-spin.js
+@@ -5,11 +5,11 @@ function func (config, playParams, response) {
+     if (baseSpin.winAmount !== (baseSpin.refWinAmount * currencyMultiplier))
+         return `base-spin win amount doesn't equal to base-spin refwin-amount * currency-multiplier`;
+ 
+-    // if (response.fsStatus.length === 0 && baseSpin.winAmount !== response.winAmount)
+-    //     return `no free spins yet base-spin win amount is not equal to response win amount`;
++    if (response.fsStatus.length === 0 && baseSpin.winAmount !== response.winAmount)
++        return `no free spins yet base-spin win amount is not equal to response win amount`;
+ 
+-    // if (response.fsStatus.length === 0 && baseSpin.winsSoFar !== response.winAmount)
+-    //     return `no free spins yet base-spin win-so-far is not equal to response win amount`;
++    if (response.fsStatus.length === 0 && baseSpin.winsSoFar !== response.winAmount)
++        return `no free spins yet base-spin win-so-far is not equal to response win amount`;
+ 
+     if (baseSpin.stops.length == 0 && baseSpin.winAmount > 0)
+         return `no stops but win in base-spin`;
+diff --git a/core/scripts/modules/free-spin.js b/core/scripts/modules/free-spin.js
+index 3305c4e..4ff4ebe 100644
+--- a/core/scripts/modules/free-spin.js
++++ b/core/scripts/modules/free-spin.js
+@@ -15,6 +15,10 @@ function func (config, playParams, response) {
+             return `FS = ${fs.index}, prevWilds(${prevWilds}) + newWsLanded(${fs.newWsLanded}) !== wsCollectedSoFar(${fs.wsCollectedSoFar})`
+ 
+         prevWilds = fs.wsCollectedSoFar;
++
++        err = wildHookCheck (fs);
++        if (err)
++            return err;
+     }
+ 
+     return err;
+diff --git a/core/scripts/modules/reel-set.js b/core/scripts/modules/reel-set.js
+index c4f4aae..9e47708 100644
+--- a/core/scripts/modules/reel-set.js
++++ b/core/scripts/modules/reel-set.js
+@@ -5,9 +5,50 @@ const rfReelSetKeys = Object.keys(RF_ReelSets);
+ const fsReelSetKeys = Object.keys(FS_ReelSets);
+ 
+ function func (config, playParams, response) {
++    const { baseSpin, freeSpins } = response;
++
++    if (response.featureMode <= 2) {
++        if (!bgReelSetKeys.includes(baseSpin.reelSet) && !baseSpin.randomFeature)
++            return `base spin using different reel-set than bg_reelset = ${baseSpin.reelSet}`;
++
++        if (baseSpin.randomFeature && !rfReelSetKeys.includes(baseSpin.reelSet))
++            return `base spin using different reel-set for random-feature than rf_reelset = ${baseSpin.reelSet}`;
++
++    }
++
++    // validateStops (baseSpin);
++
++    // for (let i = 0; i < freeSpins.length; i++) {
++    //     const fs = freeSpins[i];
++
++    //     if (!fsReelSetKeys.includes(fs.reelSet))
++    //         return `freeSpin[${i}] doesn't use fs_reelset = ${fs.reelSet}`;
++
++    //     // validateStops (fs, false);
++    // }
++
+     return null;
+ }
+ 
++// function validateStops (spin, baseSpin = true) {
++//     if (!spin)
++//         return;
++
++//     const { stops, initialSymbols } = spin;
++//     const reelSet                   = (baseSpin? (spin.randomFeature ? RG_ReelSets: BG_ReelSets): FS_ReelSets)[spin.reelSet];
++
++//     for (let i = 0; i < stops.length; i++) {
++//         const stop       = stops[i];
++//         const reel       = initialSymbols[i];
++//         const targetReel = getReel (stop, reelSet[i]);
++
++//         for (let x = 0; x < reel.length; x++) {
++//             if (reel[x] != targetReel[x])
++//                 return `${baseSpin ? 'base-': 'free-' } spin[${baseSpin? '': spin.index}], doesn't match initial symbols from the stops`;
++//         }
++//     }
++// }
++
+ function getReel(stop, reelSet, reelLen = 5) {
+     if (stop < 0)
+         return `invalid stop value = ${stop} for reelSet = ${reelSet}`;
+diff --git a/core/scripts/test.js b/core/scripts/test.js
+index c4cb0c1..84e858a 100755
+--- a/core/scripts/test.js
++++ b/core/scripts/test.js
+@@ -30,7 +30,7 @@ program
+     .option('-f, --featureMode <mode>', 'feature mode', parseFloat, 0)
+     .option('-g, --gamble <gamble>', 'g(gamble) or c(collect)')
+     .option('-e, --extraSpin <extraSpin>', 'y(yes) or n(no)')
+-    .option('-t, --truncate <value>', 'truncate some of not so imp arrays to show compact json', true)
++    .option('-t, --truncate <value>', 'truncate some of not so imp arrays to show compact json', false)
+     .option('-v, --variant <variant>', '96, 94, or 92', '96')
+     .option('-y, --buyFeature', 'buy feature', false)
+     .option('-m, --currencyMultiplier <value>', 'currency multiplier value, default value is 1', myParseInt, 1)
+@@ -131,7 +131,6 @@ if (hasCheats(cheats))
+ 
+ async function main () {
+     // console.error ('using RNG API', colors.yellow(GameWrapper.getRNGLibType().type));
+-
+     const status = GameWrapper.initRNG({
+         nats: {
+             url : 'nats://localhost:4222',
+@@ -212,9 +211,6 @@ async function main () {
+         const extraSpinStr = answer.trim().toLowerCase() === 'y';
+         console.log( colors.green(`\nExtra Spin => ${extraSpinStr ? "Buy" : "Exit"}\n`));
+ 
+-        if (!extraSpinStr)
+-            return null;
+-
+         if (playResponse.persistent)
+             playParams.options.prevState = playResponse;
+ 
+@@ -238,11 +234,9 @@ async function main () {
+ }
+ 
+ function getTruncatedResp(pr) {
+-    if (!pr)
+-        return {};
+-
+     const cloned = { ...pr };
+-    if (pr.freeSpins && Array.isArray(pr.freeSpins)) {
++
++    if (Array.isArray(pr.freeSpins)) {
+         cloned.freeSpins = pr.freeSpins.map(fs => ({
+             ...fs,
+             initialSymbols:      [{ truncated: true }],
+@@ -258,13 +252,31 @@ function getTruncatedResp(pr) {
+     return cloned;
+ }
+ 
++function truncateResp (pr) {
++    for (let fs of pr.freeSpins) {
++        fs.initialSymbols      = [ {"truncated": true }]
++        fs.intermediateSymbols = [ {"truncated": true }]
++        fs.stoppedGrid         = [ {"truncated": true }]
++        // fs.symbols             = [ {"truncated": true }]
++        fs.winnings            = [ {"truncated": true }];
++        fs.internal            = {};
++    }
++}
++
+ main ()
+     .then ((playResponse) => {
+-        if (playResponse)
+-            console.log (options.raw ?
+-                beautify (playResponse)
+-                : beautify (playResponse, null, 2, 100)
+-            );
++        if (!options.internal)
++            delete playResponse.internal;
++
++        if (options.truncate) {
++            truncateResp (playResponse);
++            console.clear();
++        }
++
++        console.log (options.raw ?
++            beautify (playResponse)
++            : beautify (playResponse, null, 2, 100)
++        );
+ 
+         process.stdout.end ();
+         process.exit (0);
+diff --git a/core/scripts/ut.js b/core/scripts/ut.js
+index e322976..120795a 100755
+--- a/core/scripts/ut.js
++++ b/core/scripts/ut.js
+@@ -195,17 +195,6 @@ function runTests (config, playParams, response, count) {
+     }
+ }
+ 
+-function printFsTable(fsBy, count) {
+-    console.table({ ...fsBy, rounds: count });
+-
+-    console.log ("% FS Contribution :");
+-    console.log ("Normal =", (fsBy.normal/fsBy.total).toFixed(5));
+-    console.log ("Re-Spin =", (fsBy.reSpin/fsBy.total).toFixed(5));
+-    console.log ("Scatter Hook =", (fsBy.scatterHook/fsBy.total).toFixed(5));
+-    console.log ("FS hit = 1 in", (count / fsBy.total).toFixed(5));
+-    console.log ();
+-}
+-
+ let count = 0;
+ async function main () {
+     let response;
+@@ -234,48 +223,19 @@ async function main () {
+         }
+     });
+ 
+-    let scatterHookCount = 0;
+     const config = GameWrapper.getConfig();
+-
+-    const fsBy  = {
+-        normal: 0,
+-        reSpin: 0,
+-        scatterHook: 0,
+-        total : 0,
+-    };
+-
+     while (true) {
+         response = play (playParams);
+-        if (response.baseSpin.scatterHook)
+-            scatterHookCount++;
+-
+-        if (response.fsStatus.length > 0) {
+-            const { baseSpin } = response;
+-            if (baseSpin.scatterHook === true) {
+-                fsBy.scatterHook += 1;
+-            } else if (baseSpin.numSC === 2 && baseSpin.reSpins.length > 0) {
+-                fsBy.reSpin += 1;
+-            } else if (baseSpin.numSC === 3 && baseSpin.reSpins.length === 0 && baseSpin.scatterHook === false) {
+-                fsBy.normal += 1;
+-            }
+-
+-            fsBy.total += 1;
+-        }
+-
+         checkNegativeValues (response);
+         runTests (config, playParams, response, count);
+ 
+         count++;
+ 
+-        if (!(count % 1000000)) {
++        if (!(count % 10000)) {
+             const memTotal = parseFloat((os.totalmem() / 1024 / 1024).toFixed(2)).toLocaleString() + ' MB';
+             const memFree  = parseFloat((os.freemem()  / 1024 / 1024).toFixed(2)).toLocaleString() + ' MB';
+-            // console.log (`+ ${count.toLocaleString()} iterations (mem = ${colors.yellow(memFree)} / ${memTotal})`);
+-
+-            console.log ("Scatter Hook Prob =", parseFloat(scatterHookCount/count).toFixed(5).toLocaleString());
+-            printFsTable (fsBy, count);
++            console.log (`+ ${count.toLocaleString()} iterations (mem = ${colors.yellow(memFree)} / ${memTotal})`);
+         }
+-
+     }
+ }
+ 
+diff --git a/core/src/game-wc/cheats.cc b/core/src/game-wc/cheats.cc
+index d1c44cf..b226799 100644
+--- a/core/src/game-wc/cheats.cc
++++ b/core/src/game-wc/cheats.cc
+@@ -179,7 +179,9 @@ Cheats parseCheats(const Napi::Env env, const Napi::Value c) {
+     getBoolAsInt (obj, "freespins",    cheats.freespins);
+     getBoolAsInt (obj, "winCap",       cheats.winCap);
+     getBoolAsInt (obj, "topRowRespin", cheats.topRowRespin);
++    getBoolAsInt (obj, "fsDynamite",   cheats.fsDynamite);
+     getBoolAsInt (obj, "fsDoubleWild", cheats.fsDoubleWild);
++    getBoolAsInt (obj, "fsWildHook",   cheats.fsWildHook);
+ 
+     extract (obj, "fsCoinValue",  cheats.fsCoinValue, false, true, 0, 10000);
+     extract (obj, "fsCoinValueCollected",  cheats.fsCoinValueCollected, false, true, 0, 10000);
+diff --git a/core/src/game-wc/cheats.h b/core/src/game-wc/cheats.h
+index 3590771..d0c074c 100644
+--- a/core/src/game-wc/cheats.h
++++ b/core/src/game-wc/cheats.h
+@@ -32,6 +32,8 @@ struct Cheats {
+     int                                     maxCollectionLevel             = -1;
+     double                                  minFSWin                       = -1;
+     double                                  maxFSWin                       = -1;
++    int                                     fsWildHook                     = -1;
++    int                                     fsDynamite                     = -1;
+     int                                     fsDoubleWild                   = -1;
+     int64_t                                 fsCoinValue                    = -1;
+     int64_t                                 fsCoinValueEveryLevel          = -1;
+@@ -171,7 +173,7 @@ const std::vector<Cheat> CheatsAll = {
+     {
+         "features",
+         "array<string>",
+-        "specific features being picked in the order given e.g. [``MORE_WILDS``, ``START_ON_LEVEL_2``, ``REMOVE_LOWEST``, ``MORE_COINS``, ``EXTRA_2_SPINS`]",
++        "specific features being picked in the order given e.g. [``MORE_WILDS``, ``START_ON_LEVEL_2``, ``MORE_DYNAMITE``, ``MORE_COINS``, ``EXTRA_2_SPINS`]",
+         "forced outcome",
+         true
+     },
+@@ -203,6 +205,20 @@ const std::vector<Cheat> CheatsAll = {
+         "random draws of the free spins function until fulfilled",
+         true
+     },
++    {
++        "fsWildHook",
++        "boolean",
++        "activates at least one wild hook feature during free spins",
++        "random draws of the free spins function until fulfilled",
++        true
++    },
++    {
++        "fsDynamite",
++        "boolean",
++        "activates at least one dynamite feature during free spins",
++        "random draws of the free spins function until fulfilled",
++        true
++    },
+     {
+         "fsDoubleWild",
+         "boolean",
+diff --git a/core/src/game-wc/game.cc b/core/src/game-wc/game.cc
+index 023aee9..01d0337 100644
+--- a/core/src/game-wc/game.cc
++++ b/core/src/game-wc/game.cc
+@@ -112,6 +112,8 @@ bool GameWithCheats::gotDesiredOutcomeNext (NextPlay& next, PlayResponse& respon
+     bool matchNumFeatures  = (cheats.numFeatures < 0      || this->evaluateNumFeatures (response, cheats, counter));
+     bool matchFeatures     = (cheats.features.size() == 0 || this->evaluateFeatures (response, cheats, counter));
+ 
++    bool matchFsWildHook   = (cheats.fsWildHook < 0       || this->evaluateFsWildHook (response, cheats, counter));
++    bool matchFsDynamite   = (cheats.fsDynamite < 0       || this->evaluateFsDynamite (response, cheats, counter));
+     bool matchFsCoinValue  = (cheats.fsCoinValue < 0      || this->evaluateFsCoinValue (response, cheats, counter));
+     bool matchFsDoubleWild = (cheats.fsDoubleWild < 0     || this->evaluateFsDoubleWild (response, cheats, counter));
+     bool matchFsCoinValueCollected  = (cheats.fsCoinValueCollected < 0 || this->evaluateFsCoinValueCollected (response, cheats, counter));
+@@ -130,11 +132,13 @@ bool GameWithCheats::gotDesiredOutcomeNext (NextPlay& next, PlayResponse& respon
+         matchFeatures &&
+         matchMaxCollectionLevel &&
+         matchMinCollectionLevel &&
++        matchFsWildHook &&
+         matchFsDoubleWild &&
+         matchFsCoinValue &&
+         matchFsCoinValueCollected &&
+         matchFsCoinValueEveryLevel &&
+         matchFsCoinValueCollectedEveryLevel &&
++        matchFsDynamite &&
+         matchGambleSuccessLevel
+     );
+ }
+@@ -279,6 +283,17 @@ bool GameWithCheats::evaluateRespinsRetrigger (PlayResponse& response, Cheats& c
+     return matched;
+ }
+ 
++bool GameWithCheats::evaluateFsWildHook (PlayResponse& response, Cheats& cheats, int counter) {
++    if (response.freeSpins.size() == 0)
++        return true;
++
++    for (auto& fs: response.freeSpins)
++        if (fs.wildHookGrid.filled)
++            return true;
++
++    return false;
++}
++
+ bool GameWithCheats::evaluateFsDoubleWild (PlayResponse& response, Cheats& cheats, int counter) {
+     if (response.freeSpins.size() == 0)
+         return true;
+@@ -358,6 +373,17 @@ bool GameWithCheats::evaluateFsCoinValueCollected (PlayResponse& response, Cheat
+     return false;
+ }
+ 
++bool GameWithCheats::evaluateFsDynamite (PlayResponse& response, Cheats& cheats, int counter) {
++    if (response.freeSpins.size() == 0)
++        return true;
++
++    for (auto& fs: response.freeSpins)
++        if (fs.dynamiteGrid.filled)
++            return true;
++
++    return false;
++}
++
+ bool GameWithCheats::evaluateMinCollectionLevel (PlayResponse& response, Cheats& cheats, int counter, const bool inNext) {
+     if (response.freeSpins.size() == 0)
+         return true;
+diff --git a/core/src/game-wc/game.h b/core/src/game-wc/game.h
+index 52c4693..c654ca1 100644
+--- a/core/src/game-wc/game.h
++++ b/core/src/game-wc/game.h
+@@ -46,7 +46,9 @@ class GameWithCheats : public Game {
+         bool evaluateFeatures (PlayResponse& response, Cheats& cheats, int counter);
+         bool evaluateCoinValue (PlayResponse& response, Cheats& cheats, int counter);
+         bool evaluateWinCap (PlayResponse& response, Cheats& cheats, int counter);
++        bool evaluateFsWildHook (PlayResponse& response, Cheats& cheats, int counter);
+         bool evaluateFsDoubleWild (PlayResponse& response, Cheats& cheats, int counter);
++        bool evaluateFsDynamite (PlayResponse& response, Cheats& cheats, int counter);
+         bool evaluateFsCoinValue (PlayResponse& response, Cheats& cheats, int counter);
+         bool evaluateFsCoinValueCollected (PlayResponse& response, Cheats& cheats, int counter);
+         bool evaluateFsCoinValueCollectedEveryLevel (PlayResponse& response, Cheats& cheats, int counter);
+diff --git a/core/src/game/data-defs.h b/core/src/game/data-defs.h
+index 67c385a..3c08ee0 100644
+--- a/core/src/game/data-defs.h
++++ b/core/src/game/data-defs.h
+@@ -14,7 +14,7 @@
+ enum class FsFeature {
+     MORE_WILDS = 0,
+     START_ON_LEVEL_2,
+-    REMOVE_LOWEST,
++    MORE_DYNAMITE,
+     MORE_COINS,
+     EXTRA_2_SPINS,
+     NONE,
+@@ -161,8 +161,11 @@ struct FreeSpin: Spin {
+     int64_t runningWinAmount = 0;
+     Respin_Vec reSpins;
+     // WildCollection wsCollected;
++    // GridV wildHookGrid {REEL_COUNT, std::vector<Symbol>(GRID_HEIGHT)}; // can't use () due to `most vexing parse`
+ 
+     int extraSpins = 0;
++    Window dynamiteGrid;
++    Window wildHookGrid;
+ };
+ 
+ enum FS_STATUS {
+diff --git a/core/src/game/extra-spin.h b/core/src/game/extra-spin.h
+index 277afca..ecc1bf6 100644
+--- a/core/src/game/extra-spin.h
++++ b/core/src/game/extra-spin.h
+@@ -12,7 +12,7 @@
+ #include "constants.h"
+ 
+ inline constexpr uint8_t MASK_MORE_WILDS    = 1 << 3;  // 0b1000
+-inline constexpr uint8_t MASK_REMOVE_LOWEST = 1 << 2;  // 0b0100
++inline constexpr uint8_t MASK_MORE_DYNAMITE = 1 << 2;  // 0b0100
+ inline constexpr uint8_t MASK_MORE_COINS    = 1 << 1;  // 0b0010
+ inline constexpr uint8_t MASK_EXTRA_2_SPINS = 1 << 0;  // 0b0001
+ 
+@@ -27,28 +27,28 @@ struct ExtraSpinInfo {
+     int featureMode     = MODE_EXTRA_SPIN_START;
+     double coinSetAProb = -1.0;
+     bool extraWilds     = false;
+-    bool removeLowest   = false;
++    bool moreDynamite   = false;
+     bool moreCoins      = false;
+     bool extra2Spins    = false;
+ };
+ 
+ constexpr inline std::array<std::array<double, MAX_WILD_COL_SIZE>, ESI_TOTAL_SIZE> EXTRA_SPIN_COSTS = {{
+-    { 5.6, 5.6, 6.5, 26, 9.7, 9.7, 10.7, 34.8, 13.5, 13.5, 13.9, 73.3, 42.4 },
+-    { 6.5, 6.5, 8.1, 36.4, 11.4, 11.4, 13, 47.1, 15.6, 15.6, 16.3, 94.6, 49.2 },
+-    { 7.2, 7.2, 8.5, 34.4, 13, 13, 14.3, 47.6, 18.6, 18.6, 19.2, 103.3, 60.2 },
+-    { 7.4, 7.4, 9, 36.9, 12.9, 12.9, 14.4, 48.3, 17.8, 17.8, 18.4, 100, 55.9 },
+-    { 5.6, 5.6, 6.9, 33.2, 9.7, 9.7, 11, 43.1, 13.5, 13.5, 14, 85, 42.4 },
+-    { 8.4, 8.4, 10.5, 48.5, 15.3, 15.3, 17.5, 64.6, 21.6, 21.6, 22.5, 133.5, 69.9 },
+-    { 8.7, 8.7, 11.3, 53.2, 15.2, 15.2, 17.7, 66.7, 20.7, 20.7, 21.5, 130.6, 65.1 },
+-    { 6.5, 6.5, 8.7, 49.1, 11.4, 11.4, 13.6, 60.3, 15.6, 15.6, 16.4, 110.2, 49.2 },
+-    { 9.6, 9.6, 11.7, 49, 17.3, 17.3, 19.3, 66, 24.5, 24.5, 25.4, 140.9, 79.4 },
+-    { 7.2, 7.2, 8.9, 44.3, 13, 13, 14.7, 59.2, 18.6, 18.6, 19.3, 120, 60.2 },
+-    { 7.4, 7.4, 9.6, 48.1, 12.9, 12.9, 14.9, 60.5, 17.8, 17.8, 18.5, 116.3, 55.9 },
+-    { 11.3, 11.3, 14.7, 71, 20.3, 20.3, 23.8, 91.6, 28.6, 28.6, 29.7, 184.2, 92.4 },
+-    { 8.4, 8.4, 11.4, 66, 15.3, 15.3, 18.3, 83.2, 21.6, 21.6, 22.6, 155.5, 69.9 },
+-    { 8.7, 8.7, 12.5, 73.5, 15.2, 15.2, 18.7, 86.7, 20.7, 20.7, 21.7, 152.4, 65.1 },
+-    { 9.6, 9.6, 12.5, 64.1, 17.3, 17.3, 20, 83, 24.5, 24.5, 25.5, 164, 79.4 },
+-    { 11.3, 11.3, 16.3, 99, 20.3, 20.3, 25.2, 119.4, 28.6, 28.6, 29.9, 215, 92.4 },
++    { 5.8, 5.8, 6.8, 27.2, 10.2, 10.2, 11.2, 36.4, 14, 14, 14.5, 75.6, 44.1 },
++    { 6.8, 6.8, 8.4, 37.7, 11.9, 11.9, 13.5, 48.8, 16.2, 16.2, 16.9, 96.9, 50.9 },
++    { 6.3, 6.3, 7.5, 32.2, 11.2, 11.2, 12.3, 42.8, 15.2, 15.2, 15.7, 85, 47.5 },
++    { 7.7, 7.7, 9.3, 38.2, 13.4, 13.4, 14.9, 49.9, 18.3, 18.3, 18.9, 102.7, 57.5 },
++    { 5.8, 5.8, 7.2, 34.8, 10.2, 10.2, 11.5, 45, 14, 14, 14.6, 87.7, 44.1 },
++    { 7.2, 7.2, 9.1, 44.2, 12.9, 12.9, 14.8, 56.6, 17.4, 17.4, 18.1, 107.1, 54.2 },
++    { 9, 9, 11.6, 54.5, 15.7, 15.7, 18.2, 68.3, 21.3, 21.3, 22.1, 133.2, 66.8 },
++    { 6.8, 6.8, 9, 50.9, 11.9, 11.9, 14.1, 62.4, 16.2, 16.2, 17, 112.8, 50.9 },
++    { 8.1, 8.1, 9.9, 43.9, 14.2, 14.2, 15.9, 57.3, 19.3, 19.3, 20, 114.3, 60.4 },
++    { 6.3, 6.3, 7.9, 42.2, 11.2, 11.2, 12.7, 53.8, 15.2, 15.2, 15.8, 98.8, 47.5 },
++    { 7.7, 7.7, 9.9, 49.6, 13.4, 13.4, 15.4, 62.4, 18.3, 18.3, 19, 119.4, 57.5 },
++    { 9.4, 9.4, 12.4, 62.2, 16.5, 16.5, 19.4, 77.6, 22.2, 22.2, 23.1, 145.8, 69.5 },
++    { 7.2, 7.2, 10, 60.9, 12.9, 12.9, 15.5, 73.3, 17.4, 17.4, 18.2, 124.9, 54.2 },
++    { 9, 9, 12.8, 75.1, 15.7, 15.7, 19.2, 88.6, 21.3, 21.3, 22.2, 155.5, 66.8 },
++    { 8.1, 8.1, 10.7, 58.6, 14.2, 14.2, 16.5, 72.9, 19.3, 19.3, 20.1, 133.2, 60.4 },
++    { 9.4, 9.4, 13.8, 88, 16.5, 16.5, 20.6, 102.1, 22.2, 22.2, 23.3, 170.5, 69.5 },
+ }};
+ 
+ constexpr inline std::array<std::array<int, MAX_WILD_COL_SIZE>, ESI_TOTAL_SIZE> EXTRA_SPIN_IDS = {{
+@@ -72,60 +72,60 @@ constexpr inline std::array<std::array<int, MAX_WILD_COL_SIZE>, ESI_TOTAL_SIZE>
+ 
+ #if defined (VARIANT_96)
+ inline constexpr std::array<std::array<double, MAX_WILD_COL_SIZE>, ESI_TOTAL_SIZE> EXTRA_SPIN_COIN_SET_A_PROBS = {{
+-    { 0.2253, 0.2253, 0.305, 0.2501, 0.2927, 0.2927, 0.2325, 0.2524, 0.2272, 0.2272, 0.2518, 0.2332, 0.2385, },
+-    { 0.2854, 0.2854, 0.241, 0.25, 0.2661, 0.2661, 0.2531, 0.243, 0.2624, 0.2624, 0.2205, 0.2312, 0.2387, },
+-    { 0.2148, 0.2148, 0.2098, 0.2454, 0.2482, 0.2482, 0.2306, 0.2235, 0.2194, 0.2194, 0.2313, 0.2119, 0.2147, },
+-    { 0.3233, 0.3233, 0.2786, 0.2668, 0.2865, 0.2865, 0.2507, 0.2448, 0.2325, 0.2325, 0.2288, 0.236, 0.2329, },
+-    { 0.2253, 0.2253, 0.2378, 0.2606, 0.2927, 0.2927, 0.2344, 0.2502, 0.2272, 0.2272, 0.2384, 0.2364, 0.2385, },
+-    { 0.252, 0.252, 0.2394, 0.2321, 0.213, 0.213, 0.2087, 0.2221, 0.2179, 0.2179, 0.2101, 0.2068, 0.2106    , },
+-    { 0.3057, 0.3057, 0.2846, 0.2536, 0.2678, 0.2678, 0.2703, 0.2473, 0.2403, 0.2403, 0.2469, 0.2299, 0.2303, },
+-    { 0.2854, 0.2854, 0.2909, 0.2599, 0.2661, 0.2661, 0.2428, 0.2476, 0.2624, 0.2624, 0.2279, 0.2296, 0.2387, },
+-    { 0.2471, 0.2471, 0.2307, 0.2273, 0.2319, 0.2319, 0.2243, 0.218, 0.2311, 0.2311, 0.2071, 0.2111, 0.2031, },
+-    { 0.2148, 0.2148, 0.2666, 0.2344, 0.2482, 0.2482, 0.2429, 0.2173, 0.2194, 0.2194, 0.2364, 0.2053, 0.2147, },
+-    { 0.3233, 0.3233, 0.2624, 0.2489, 0.2865, 0.2865, 0.2468, 0.2412, 0.2325, 0.2325, 0.2345, 0.2316, 0.2329, },
+-    { 0.2301, 0.2301, 0.2663, 0.227, 0.2557, 0.2557, 0.2386, 0.2139, 0.2108, 0.2108, 0.2281, 0.2071, 0.2107, },
+-    { 0.252, 0.252, 0.2428, 0.2337, 0.213, 0.213, 0.2153, 0.2115, 0.2179, 0.2179, 0.2341, 0.2122, 0.2106    , },
+-    { 0.3057, 0.3057, 0.2622, 0.2565, 0.2678, 0.2678, 0.2538, 0.2374, 0.2403, 0.2403, 0.2286, 0.2304, 0.2303, },
+-    { 0.2471, 0.2471, 0.222, 0.2323, 0.2319, 0.2319, 0.2185, 0.214, 0.2311, 0.2311, 0.2292, 0.2058, 0.2031, },
+-    { 0.2301, 0.2301, 0.2665, 0.2223, 0.2557, 0.2557, 0.2215, 0.2188, 0.2108, 0.2108, 0.2333, 0.2103, 0.2107, },
++    { 0.2174, 0.2174, 0.2241, 0.1957, 0.2126, 0.2126, 0.1731, 0.1844, 0.2135, 0.2135, 0.176, 0.1637, 0.1692 },
++    { 0.1521, 0.1521, 0.169, 0.2016, 0.2017, 0.2017, 0.221, 0.1759, 0.198, 0.198, 0.154, 0.1683, 0.1752 },
++    { 0.2045, 0.2045, 0.1929, 0.1906, 0.1996, 0.1996, 0.2248, 0.1835, 0.1864, 0.1864, 0.1783, 0.1654, 0.1648 },
++    { 0.1897, 0.1897, 0.1875, 0.1793, 0.1872, 0.1872, 0.1736, 0.1751, 0.198, 0.198, 0.1991, 0.1664, 0.1725 },
++    { 0.2174, 0.2174, 0.1582, 0.1841, 0.2126, 0.2126, 0.1856, 0.1892, 0.2135, 0.2135, 0.1666, 0.165, 0.1692 },
++    { 0.2477, 0.2477, 0.2188, 0.1839, 0.192, 0.192, 0.1867, 0.1748, 0.1647, 0.1647, 0.1554, 0.1682, 0.1645 },
++    { 0.1822, 0.1822, 0.2117, 0.1835, 0.1842, 0.1842, 0.2144, 0.1855, 0.1655, 0.1655, 0.1775, 0.168, 0.1598 },
++    { 0.1521, 0.1521, 0.2447, 0.1814, 0.2017, 0.2017, 0.2156, 0.1723, 0.198, 0.198, 0.1644, 0.1713, 0.1752 },
++    { 0.1968, 0.1968, 0.2351, 0.1885, 0.1974, 0.1974, 0.2054, 0.1703, 0.1878, 0.1878, 0.1662, 0.1628, 0.1716 },
++    { 0.2045, 0.2045, 0.2605, 0.1766, 0.1996, 0.1996, 0.214, 0.183, 0.1864, 0.1864, 0.1756, 0.1718, 0.1648 },
++    { 0.1897, 0.1897, 0.1832, 0.1885, 0.1872, 0.1872, 0.1764, 0.181, 0.198, 0.198, 0.2052, 0.165, 0.1725 },
++    { 0.1681, 0.1681, 0.1804, 0.1928, 0.1824, 0.1824, 0.1923, 0.1775, 0.1901, 0.1901, 0.1843, 0.1705, 0.1617 },
++    { 0.2477, 0.2477, 0.1664, 0.1903, 0.192, 0.192, 0.2008, 0.1779, 0.1647, 0.1647, 0.1742, 0.1723, 0.1645 },
++    { 0.1822, 0.1822, 0.1963, 0.1891, 0.1842, 0.1842, 0.2045, 0.1794, 0.1655, 0.1655, 0.2028, 0.1649, 0.1598 },
++    { 0.1968, 0.1968, 0.1894, 0.1813, 0.1974, 0.1974, 0.2143, 0.1817, 0.1878, 0.1878, 0.1799, 0.1659, 0.1716 },
++    { 0.1681, 0.1681, 0.2185, 0.1786, 0.1824, 0.1824, 0.1763, 0.1754, 0.1901, 0.1901, 0.1715, 0.1667, 0.1617 },
+ }};
+ #elif defined (VARIANT_94)
+ constexpr inline std::array<std::array<double, MAX_WILD_COL_SIZE>, ESI_TOTAL_SIZE> EXTRA_SPIN_COIN_SET_A_PROBS = {{
+-    { 0.3749, 0.3749, 0.4551, 0.4167, 0.4582, 0.4582, 0.4011, 0.4281, 0.4023, 0.4023, 0.4265, 0.4167, 0.4225 },
+-    { 0.4327, 0.4327, 0.3931, 0.4169, 0.4322, 0.4322, 0.4205, 0.4189, 0.4364, 0.4364, 0.3958, 0.4143, 0.4224 },
+-    { 0.3809, 0.3809, 0.3792, 0.4273, 0.43, 0.43, 0.4138, 0.4154, 0.4116, 0.4116, 0.4234, 0.41, 0.4127 },
+-    { 0.4709, 0.4709, 0.4306, 0.4344, 0.4528, 0.4528, 0.4191, 0.4219, 0.4078, 0.4078, 0.4048, 0.4196, 0.4167 },
+-    { 0.3749, 0.3749, 0.3909, 0.429, 0.4582, 0.4582, 0.403, 0.4271, 0.4023, 0.4023, 0.4136, 0.4199, 0.4225 },
+-    { 0.4165, 0.4165, 0.4083, 0.415, 0.3952, 0.3952, 0.3925, 0.4142, 0.4097, 0.4097, 0.4022, 0.4049, 0.4087 },
+-    { 0.4526, 0.4526, 0.4371, 0.422, 0.4338, 0.4338, 0.4385, 0.4242, 0.415, 0.415, 0.4221, 0.4137, 0.4141 },
+-    { 0.4327, 0.4327, 0.4437, 0.4293, 0.4322, 0.4322, 0.4114, 0.4248, 0.4364, 0.4364, 0.4028, 0.4134, 0.4224 },
+-    { 0.4129, 0.4129, 0.4002, 0.4109, 0.4141, 0.4141, 0.4079, 0.4109, 0.4231, 0.4231, 0.4003, 0.4096, 0.4017 },
+-    { 0.3809, 0.3809, 0.4351, 0.4183, 0.43, 0.43, 0.4264, 0.4103, 0.4116, 0.4116, 0.4284, 0.4036, 0.4127 },
+-    { 0.4709, 0.4709, 0.4164, 0.4192, 0.4528, 0.4528, 0.4156, 0.4195, 0.4078, 0.4078, 0.4104, 0.416, 0.4167 },
+-    { 0.3952, 0.3952, 0.436, 0.4114, 0.4369, 0.4369, 0.4226, 0.4069, 0.403, 0.403, 0.4204, 0.4054, 0.4087 },
+-    { 0.4165, 0.4165, 0.413, 0.4189, 0.3952, 0.3952, 0.3998, 0.4049, 0.4097, 0.4097, 0.4261, 0.4098, 0.4087 },
+-    { 0.4526, 0.4526, 0.4173, 0.4276, 0.4338, 0.4338, 0.4227, 0.4159, 0.415, 0.415, 0.404, 0.4145, 0.4141 },
+-    { 0.4129, 0.4129, 0.3934, 0.4183, 0.4141, 0.4141, 0.4028, 0.408, 0.4231, 0.4231, 0.4217, 0.4045, 0.4017 },
+-    { 0.3952, 0.3952, 0.438, 0.4095, 0.4369, 0.4369, 0.406, 0.4128, 0.403, 0.403, 0.4254, 0.4088, 0.4087 },
++    { 0.4137, 0.4137, 0.4224, 0.4061, 0.42, 0.42, 0.3825, 0.4017, 0.4275, 0.4275, 0.3911, 0.3889, 0.3946 },
++    { 0.3487, 0.3487, 0.3688, 0.4117, 0.4079, 0.4079, 0.4286, 0.3931, 0.4119, 0.4119, 0.3689, 0.3932, 0.401 },
++    { 0.4024, 0.4024, 0.3921, 0.4016, 0.4078, 0.4078, 0.4337, 0.4004, 0.4006, 0.4006, 0.3938, 0.3902, 0.3909 },
++    { 0.3869, 0.3869, 0.3882, 0.3915, 0.3963, 0.3963, 0.384, 0.3931, 0.4125, 0.4125, 0.4135, 0.3915, 0.399 },
++    { 0.4137, 0.4137, 0.3588, 0.3957, 0.42, 0.42, 0.3953, 0.407, 0.4275, 0.4275, 0.3813, 0.3906, 0.3946 },
++    { 0.4415, 0.4415, 0.4181, 0.3947, 0.3997, 0.3997, 0.3955, 0.3918, 0.3797, 0.3797, 0.371, 0.3932, 0.3895 },
++    { 0.3796, 0.3796, 0.4116, 0.3958, 0.3922, 0.3922, 0.4237, 0.4033, 0.38, 0.38, 0.3916, 0.3938, 0.3857 },
++    { 0.3487, 0.3487, 0.4431, 0.3937, 0.4079, 0.4079, 0.4242, 0.3902, 0.4119, 0.4119, 0.38, 0.3966, 0.401 },
++    { 0.3947, 0.3947, 0.4356, 0.4008, 0.4053, 0.4053, 0.4144, 0.3885, 0.4029, 0.4029, 0.3816, 0.3881, 0.3976 },
++    { 0.4024, 0.4024, 0.4604, 0.3884, 0.4078, 0.4078, 0.4239, 0.401, 0.4006, 0.4006, 0.3907, 0.3965, 0.3909 },
++    { 0.3869, 0.3869, 0.3846, 0.4032, 0.3963, 0.3963, 0.3859, 0.4011, 0.4125, 0.4125, 0.4199, 0.3908, 0.399 },
++    { 0.3654, 0.3654, 0.3814, 0.4054, 0.3903, 0.3903, 0.4018, 0.3961, 0.4045, 0.4045, 0.3995, 0.3956, 0.3874 },
++    { 0.4415, 0.4415, 0.3668, 0.4025, 0.3997, 0.3997, 0.4099, 0.3965, 0.3797, 0.3797, 0.3892, 0.3967, 0.3895 },
++    { 0.3796, 0.3796, 0.3978, 0.4034, 0.3922, 0.3922, 0.4142, 0.3982, 0.38, 0.38, 0.4169, 0.3912, 0.3857 },
++    { 0.3947, 0.3947, 0.3906, 0.3961, 0.4053, 0.4053, 0.4244, 0.4012, 0.4029, 0.4029, 0.3958, 0.3911, 0.3976 },
++    { 0.3654, 0.3654, 0.4212, 0.3934, 0.3903, 0.3903, 0.3871, 0.3951, 0.4045, 0.4045, 0.3864, 0.3923, 0.3874 },
+ }};
+ #elif defined (VARIANT_92)
+ constexpr inline std::array<std::array<double, MAX_WILD_COL_SIZE>, ESI_TOTAL_SIZE> EXTRA_SPIN_COIN_SET_A_PROBS = {{
+-    { 0.5244, 0.5244, 0.6052, 0.5833, 0.6238, 0.6238, 0.5696, 0.6038, 0.5773, 0.5773, 0.6012, 0.6001, 0.6064 },
+-    { 0.58, 0.58, 0.5452, 0.5838, 0.5983, 0.5983, 0.5879, 0.5948, 0.6105, 0.6105, 0.5712, 0.5975, 0.6061 },
+-    { 0.547, 0.547, 0.5486, 0.6091, 0.6119, 0.6119, 0.5971, 0.6073, 0.6039, 0.6039, 0.6155, 0.6081, 0.6107 },
+-    { 0.6186, 0.6186, 0.5826, 0.602, 0.619, 0.619, 0.5875, 0.5989, 0.5831, 0.5831, 0.5808, 0.6033, 0.6006 },
+-    { 0.5244, 0.5244, 0.5439, 0.5975, 0.6238, 0.6238, 0.5717, 0.604, 0.5773, 0.5773, 0.5888, 0.6034, 0.6064 },
+-    { 0.5809, 0.5809, 0.5771, 0.598, 0.5774, 0.5774, 0.5762, 0.6063, 0.6014, 0.6014, 0.5944, 0.603, 0.6068 },
+-    { 0.5994, 0.5994, 0.5896, 0.5905, 0.5999, 0.5999, 0.6066, 0.601, 0.5897, 0.5897, 0.5972, 0.5975, 0.598 },
+-    { 0.58, 0.58, 0.5965, 0.5986, 0.5983, 0.5983, 0.5799, 0.6019, 0.6105, 0.6105, 0.5777, 0.5971, 0.6061 },
+-    { 0.5787, 0.5787, 0.5697, 0.5945, 0.5964, 0.5964, 0.5915, 0.6038, 0.6151, 0.6151, 0.5935, 0.6081, 0.6003 },
+-    { 0.547, 0.547, 0.6036, 0.6021, 0.6119, 0.6119, 0.6098, 0.6032, 0.6039, 0.6039, 0.6205, 0.602, 0.6107 },
+-    { 0.6186, 0.6186, 0.5703, 0.5895, 0.619, 0.619, 0.5845, 0.5979, 0.5831, 0.5831, 0.5863, 0.6005, 0.6006 },
+-    { 0.5603, 0.5603, 0.6056, 0.5958, 0.6181, 0.6181, 0.6066, 0.5999, 0.5953, 0.5953, 0.6126, 0.6036, 0.6067 },
+-    { 0.5809, 0.5809, 0.5833, 0.6042, 0.5774, 0.5774, 0.5844, 0.5983, 0.6014, 0.6014, 0.618, 0.6074, 0.6068 },
+-    { 0.5994, 0.5994, 0.5723, 0.5987, 0.5999, 0.5999, 0.5915, 0.5943, 0.5897, 0.5897, 0.5793, 0.5985, 0.598 },
+-    { 0.5787, 0.5787, 0.5647, 0.6042, 0.5964, 0.5964, 0.5872, 0.602, 0.6151, 0.6151, 0.6142, 0.6032, 0.6003 },
+-    { 0.5603, 0.5603, 0.6095, 0.5966, 0.6181, 0.6181, 0.5906, 0.6068, 0.5953, 0.5953, 0.6175, 0.6073, 0.6067 },
++    { 0.6099, 0.6099, 0.6207, 0.6166, 0.6273, 0.6273, 0.5918, 0.619, 0.6415, 0.6415, 0.6062, 0.614, 0.6201 },
++    { 0.5452, 0.5452, 0.5685, 0.6217, 0.6142, 0.6142, 0.6362, 0.6103, 0.6259, 0.6259, 0.5838, 0.618, 0.6268 },
++    { 0.6002, 0.6002, 0.5912, 0.6127, 0.616, 0.616, 0.6425, 0.6173, 0.6148, 0.6148, 0.6094, 0.6151, 0.6171 },
++    { 0.5841, 0.5841, 0.5889, 0.6037, 0.6053, 0.6053, 0.5945, 0.6111, 0.6269, 0.6269, 0.6278, 0.6165, 0.6255 },
++    { 0.6099, 0.6099, 0.5594, 0.6072, 0.6273, 0.6273, 0.605, 0.6248, 0.6415, 0.6415, 0.5961, 0.6163, 0.6201 },
++    { 0.6353, 0.6353, 0.6174, 0.6055, 0.6074, 0.6074, 0.6043, 0.6087, 0.5947, 0.5947, 0.5866, 0.6182, 0.6144 },
++    { 0.5769, 0.5769, 0.6115, 0.6081, 0.6001, 0.6001, 0.6329, 0.6211, 0.5945, 0.5945, 0.6056, 0.6196, 0.6116 },
++    { 0.5452, 0.5452, 0.6415, 0.6059, 0.6142, 0.6142, 0.6328, 0.6082, 0.6259, 0.6259, 0.5955, 0.6219, 0.6268 },
++    { 0.5927, 0.5927, 0.636, 0.6132, 0.6132, 0.6132, 0.6234, 0.6068, 0.618, 0.618, 0.597, 0.6135, 0.6235 },
++    { 0.6002, 0.6002, 0.6604, 0.6003, 0.616, 0.616, 0.6337, 0.6189, 0.6148, 0.6148, 0.6059, 0.6213, 0.6171 },
++    { 0.5841, 0.5841, 0.5861, 0.6178, 0.6053, 0.6053, 0.5953, 0.6213, 0.6269, 0.6269, 0.6346, 0.6165, 0.6255 },
++    { 0.5628, 0.5628, 0.5823, 0.618, 0.5982, 0.5982, 0.6113, 0.6148, 0.6189, 0.6189, 0.6146, 0.6208, 0.6131 },
++    { 0.6353, 0.6353, 0.5671, 0.6146, 0.6074, 0.6074, 0.619, 0.6151, 0.5947, 0.5947, 0.6042, 0.6212, 0.6144 },
++    { 0.5769, 0.5769, 0.5993, 0.6177, 0.6001, 0.6001, 0.6239, 0.6171, 0.5945, 0.5945, 0.6309, 0.6175, 0.6116 },
++    { 0.5927, 0.5927, 0.5917, 0.6108, 0.6132, 0.6132, 0.6344, 0.6206, 0.618, 0.618, 0.6117, 0.6163, 0.6235 },
++    { 0.5628, 0.5628, 0.6239, 0.6083, 0.5982, 0.5982, 0.5978, 0.6148, 0.6189, 0.6189, 0.6013, 0.6178, 0.6131 },
+ }};
+ #else
+ #error "no variant defined"
+@@ -182,7 +182,7 @@ inline const std::vector<std::vector<std::vector<int>>> EXTRA_SPIN_CR_REPLACEMEN
+ constexpr inline std::array<uint8_t, ESI_TOTAL_SIZE> x = {
+     0b0000,   // Row 0:  NO,  NO,  NO,  NO
+     0b1000,   // Row 1:  YES, NO,  NO,  NO  (MORE_WILDS)
+-    0b0100,   // Row 2:  NO,  YES, NO,  NO  (REMOVE_LOWEST)
++    0b0100,   // Row 2:  NO,  YES, NO,  NO  (MORE_DYNAMITE)
+     0b0010,   // Row 3:  NO,  NO,  YES, NO  (MORE_COINS)
+     0b0001,   // Row 4:  NO,  NO,  NO,  YES (EXTRA_2_SPINS)
+     0b1100,   // Row 5:  YES, YES, NO,  NO
+@@ -204,7 +204,7 @@ constexpr inline std::array<uint8_t, 16> maskToRow = {
+     4,   // 0b0001 -> Row 4  (EXTRA_2_SPINS)
+     3,   // 0b0010 -> Row 3  (MORE_COINS)
+     10,  // 0b0011 -> Row 10
+-    2,   // 0b0100 -> Row 2  (REMOVE_LOWEST)
++    2,   // 0b0100 -> Row 2  (MORE_DYNAMITE)
+     9,   // 0b0101 -> Row 9
+     8,   // 0b0110 -> Row 8
+     14,  // 0b0111 -> Row 14
+@@ -234,9 +234,9 @@ inline uint8_t getEsInfoIdx (const std::vector<std::string>& activeFeatures, Ext
+         if (af == "MORE_WILDS") {
+             idx |= MASK_MORE_WILDS;
+             esi.extraWilds = true;
+-        } else if (af == "REMOVE_LOWEST") {
+-            idx |= MASK_REMOVE_LOWEST;
+-            esi.removeLowest = true;
++        } else if (af == "MORE_DYNAMITE") {
++            idx |= MASK_MORE_DYNAMITE;
++            esi.moreDynamite = true;
+         } else if (af == "MORE_COINS") {
+             idx |= MASK_MORE_COINS;
+             esi.moreCoins = true;
+diff --git a/core/src/game/paytable.cc b/core/src/game/paytable.cc
+index 2c790eb..abf6c82 100644
+--- a/core/src/game/paytable.cc
++++ b/core/src/game/paytable.cc
+@@ -16,7 +16,7 @@ void PayTableCtrl::evaluateLine(const Symbol (&window)[REEL_COUNT][GRID_HEIGHT],
+         // LOG("Evaluating the Co-ordinates (%d, %d) \n", x, y);
+         // LOG("Symbol for win eval is %s\n", SymbolChar[sym]);
+ 
+-        if(sym == SC) token = SYM_OTHER;
++        if(sym == SC || (sym == CS && sym < INVALID)) token = SYM_OTHER;
+         else if(sym == WS) token = SYM_WS;
+         else if (sym == latchedSym) token = SYM_N1;
+         else token = SYM_NX;
+diff --git a/core/src/game/paytable.h b/core/src/game/paytable.h
+index 68fd972..9bd6142 100644
+--- a/core/src/game/paytable.h
++++ b/core/src/game/paytable.h
+@@ -32,7 +32,7 @@ const PayTableArray PayTable {{
+     /* H2  */     { 0, 30, 150, 1000,},
+     /* H3  */     { 0, 20, 100,  500,},
+     /* H4  */     { 0, 20, 100,  500,},
+-    /* CS  */     { 0, 10, 50, 200,},
++    /* CS  */     { 0,  0,   0,    0,},
+     /* L6  */     { 0,  2,  25,  100,},
+     /* L7  */     { 0,  2,  25,  100,},
+     /* L8  */     { 0,  2,  10,   50,},
+diff --git a/core/src/game/paywindow.cc b/core/src/game/paywindow.cc
+index 7c348bf..f6d8ce5 100644
+--- a/core/src/game/paywindow.cc
++++ b/core/src/game/paywindow.cc
+@@ -153,6 +153,7 @@ void PayWindow::drawCsSymbols (CoinSym_Vec& coinSymbols, const int64_t refBetBas
+             }
+         }
+     }
++
+ }
+ 
+ void PayWindow::clear() {
+@@ -203,13 +204,13 @@ std::pair<int64_t, bool> PayWindow::getWinnings (
+         const PayLine& line = lines[i];
+         LOG("%sEvaluating #payline %d%s\n", ANSI_COLOR_YELLOW, i+1, ANSI_COLOR_RESET);
+ 
+-        PayTableCtrl::evaluateLine (window, line, i, refWinData);
++        PayTableCtrl::evaluateLine(window, line, i, refWinData);
+         auto [ symbol, totalCount, WSCount ] = refWinData;
+         if (totalCount < 2)
+             continue;
+ 
+         // Perhaps this test is not needed
+-        if (symbol == SC)
++        if (symbol == SC || symbol == CS)
+             return std::make_pair(0, maxWinTriggered);
+ 
+         int multi             = PayTable[symbol][totalCount - 2];
+@@ -339,20 +340,10 @@ std::vector<std::pair<int, int>> PayWindow::scatterHookPositions (const std::vec
+      return positions;
+ }
+ 
+-bool PayWindow::scatterHook (Spin& _spin, const int mode) {
++bool PayWindow::scatterHook (Spin& _spin) {
+     if (_spin.numSC != 2)
+         return false;
+ 
+-    double shfProb = -0.01;
+-    switch (mode) {
+-        case MODE_NORMAL  : shfProb = SCATTER_HOOK_PROB_REGULAR; break;
+-        case MODE_ENHANCED: shfProb = SCATTER_HOOK_PROB_BONUS_BOOST; break;
+-        case MODE_SB      : shfProb = SCATTER_HOOK_PROB_SUPER_BOOST; break;
+-        default: throw_error ("invalid mode = ", mode);
+-    }
+-
+-    const bool shouldShfTrig = (rng.getDouble() < shfProb);
+-
+     std::vector<int> nonScSymReels;
+     for (int i = 0; i < REEL_COUNT; i++) {
+         bool hasScatter = false;
+@@ -376,7 +367,7 @@ bool PayWindow::scatterHook (Spin& _spin, const int mode) {
+ 
+     bool shfTriggered = false;
+ 
+-    if (scatterHookStops.size() > 0 && shouldShfTrig) {
++    if (scatterHookStops.size() > 0) {
+         std::pair<int, int> scatterHookStop = scatterHookStops [rng.getScaled (scatterHookStops.size())];
+         _spin.scatterHookStops = _spin.stops;
+         _spin.scatterHookStops [scatterHookStop.second] = scatterHookStop.first;
+@@ -450,45 +441,17 @@ int PayWindow::getNumWSToPlace (const bool extraWilds, const int wsColLevel, con
+     return numWSToPlace;
+ }
+ 
+-int PayWindow::getCoinSymbolForCRRep (const int& wsColLevel, const CoinSet& coinSet, const bool removeLowest, const bool extraSpin) {
++int PayWindow::getCoinSymbolForCRRep (const int& wsColLevel, const CoinSet& coinSet) {
+     const int wsOnGrid = symbolCount (WS);
+-    int coinSymIdx     = -1;
+-    std::vector<int> weights;
++    int coinSymIdx = -1;
+ 
+     if (wsOnGrid == 0) {
+-        weights = CoinSymbolsWeight;
++        coinSymIdx = rng.getWeightedIndex (CoinSymbolsWeight.data(), CoinSymbolsWeight.size());
+     } else {
+         if (coinSet == CoinSet::None)
+             throw_error ("coin set not selected");
+ 
+-        const bool coinSetC = (coinSet != CoinSet::A && removeLowest && extraSpin);
+-        weights = (
+-                coinSetC ? CR_REPLACEMENT_CS_WEIGHTS_SET_C :
+-                coinSet == CoinSet::A ? CR_REPLACEMENT_CS_WEIGHTS_SET_A :
+-                CR_REPLACEMENT_CS_WEIGHTS_SET_B
+-            )[wsColLevel-1];
+-    }
+-
+-    if (removeLowest) {
+-        // ---- Approach 1: Remove 2x from draw pool
+-        // std::vector<int> weightsExclude2x = weights;
+-        // weightsExclude2x.erase (weightsExclude2x.begin() + 0);
+-
+-        // // kind of redundant check, but still for peace of mind
+-        // if (weightsExclude2x.empty() || weightsExclude2x.size() >= weights.size())
+-        //     throw_error ("coin weights list empty");
+-
+-        // coinSymIdx = rng.getWeightedIndex (weightsExclude2x.data(), weightsExclude2x.size());
+-
+-        // if (weightsExclude2x.size() < weights.size())
+-        //     coinSymIdx += (weights.size() - weightsExclude2x.size());
+-
+-        // ---- Approach 2: Replace 2x after draw with 5x
+-        coinSymIdx = rng.getWeightedIndex (weights.data(), weights.size());
+-        if (coinSymIdx == REMOVE_LOWEST_COIN_2X_IDX)
+-            coinSymIdx = REMOVE_LOWEST_COIN_5X_IDX;
+-
+-    } else {
++        const std::vector<int>& weights = (coinSet == CoinSet::A ? CR_REPLACEMENT_CS_WEIGHTS_SET_A : CR_REPLACEMENT_CS_WEIGHTS_SET_B)[wsColLevel-1];
+         coinSymIdx = rng.getWeightedIndex (weights.data(), weights.size());
+     }
+ 
+@@ -502,9 +465,7 @@ void PayWindow::placeCoinSymbolsForCR (
+     CoinSym_Vec& coinSymbols,
+     const int64_t& refBetBase,
+     const WildCollection& wsCol,
+-    const CoinSet& coinSet,
+-    const bool removeLowest,
+-    const bool extraSpin
++    const CoinSet& coinSet
+ ) {
+     coinSymbols.clear();
+ 
+@@ -512,11 +473,8 @@ void PayWindow::placeCoinSymbolsForCR (
+         for (int j = 0; j < GRID_HEIGHT; j++) {
+             if (window[i][j] == CR) {
+                 window[i][j]      = CS;
+-                const auto idx    = getCoinSymbolForCRRep (wsCol.activeLevel, coinSet, removeLowest, extraSpin);
+-                const auto valueX = COIN_VALUES_X [idx];
+-
+-                if (valueX == 2 && removeLowest)
+-                    throw_error ("remove_lowest feature active with 2x coin");
++                const auto idx    = getCoinSymbolForCRRep (wsCol.activeLevel, coinSet);
++                const auto valueX = COIN_VALUES_X[idx];
+ 
+                 coinSymbols.push_back ({
+                     i, j, window[i][j],
+@@ -539,9 +497,7 @@ void PayWindow::replaceCR (
+     const CoinSet& coinSet,
+     SymCoords_Vec& wildSyms,
+     const bool firstExtraSpin,
+-    const bool gtdWildSpecial,
+-    const bool removeLowest,
+-    const bool extraSpin
++    const bool gtdWildSpecial
+ ) {
+     SymCoords_Vec crSymbols;
+     std::vector<int> crSymIdxs;
+@@ -574,7 +530,105 @@ void PayWindow::replaceCR (
+         nWSPlace--;
+     }
+ 
+-    placeCoinSymbolsForCR (coinSymbols, refBetBase, wsCol, coinSet, removeLowest, extraSpin);
++    // wsCol.soFar += numWSToPlace;
++
++    // replace the leftover CR with CS
++    placeCoinSymbolsForCR (coinSymbols, refBetBase, wsCol, coinSet);
++}
++
++bool PayWindow::wildHookFeature (const CoinSym_Vec& coinSyms, const bool moreDynamite, SymCoords_Vec& wildSyms) {
++    auto nCoinSyms = coinSyms.size();
++    if (!(nCoinSyms >= 1 && nCoinSyms <= 14 && symbolCount(WS) == 0))
++        return false;
++
++    const double wfhProb = (moreDynamite ? WILD_HOOK_FEATURE_WITH_MORE_DYNAMITE : WILD_HOOK_FEATURE_WITHOUT_MORE_DYNAMITE);
++    const double randVal = rng.getDouble();
++    bool whfTrigerred = (randVal < wfhProb);
++
++    if (!whfTrigerred)
++        return whfTrigerred;
++
++
++    std::vector<std::pair<int, int>> nonCsPositions;
++    for (int i = 0; i < REEL_COUNT; i++) {
++        for (int j = 0; j < GRID_HEIGHT; j++) {
++            if (window[i][j] != CS)
++                nonCsPositions.push_back({i, j});
++        }
++    }
++
++    const auto nonCsPos = nonCsPositions[rng.getScaled(nonCsPositions.size())];
++    window[nonCsPos.first][nonCsPos.second] = WS;
++    wildSyms.push_back ({ nonCsPos.first, nonCsPos.second, WS });
++
++    return whfTrigerred;
++}
++
++bool PayWindow::dynamiteFeature (
++    const bool moreDynamite,
++    const WildCollection& wsCol,
++    const CoinSet& coinSet,
++    CoinSym_Vec& coinSymbols,
++    const int64_t refBetBase
++) {
++    const int nWS = symbolCount(WS);
++    if (nWS < 1 || coinSymbols.size() > 0)
++        return false;
++
++    std::map<Symbol, bool> symbols;
++    Winning_Vec winnings;
++    getWinnings (winnings, /*refBetBase=*/1, /*refWinsSoFar=*/0); // values to get winnning syms
++    std::vector<std::pair<int, int>> nonWinSymbols;
++
++    //TODO: preliminary win eval to check dynamite feature, line 193/4
++    for (auto& win: winnings)
++    symbols.insert ({ win.symbol, true });
++
++    for (int i = 0; i < REEL_COUNT; i++) {
++        for (int j = 0; j < GRID_HEIGHT; j++) {
++            const auto& sym = window[i][j];
++            if (symbols.find (sym) == symbols.end() && sym != WS) {
++                nonWinSymbols.push_back ({ i, j });
++                // NOTE: comment for non-unique(all) positions for each symbol
++                symbols.insert ({ sym, true });
++            }
++        }
++    }
++
++    if (nonWinSymbols.size() < 3)
++        return false;
++
++    const double dfProb    = (moreDynamite ? DYNAMITE_FEATURE_WITH_MORE_DYNAMITE: DYNAMITE_FEATURE_WITHOUT_MORE_DYNAMITE);
++    const double randVal   = rng.getDouble();
++    const bool dfTriggered = (randVal < dfProb);
++
++    if (!dfTriggered)
++        return dfTriggered;
++
++    const auto& [counts, weights] = DYNAMITE_FEAT_CS_SYMBOLS;
++    const int csSymsToPlace        = std::min (
++        counts[rng.getWeightedIndex (weights.data(), weights.size())],
++        static_cast<int>(nonWinSymbols.size())
++    );
++
++    while (!nonWinSymbols.empty()) {
++        const auto& randIdx = rng.getScaled (nonWinSymbols.size());
++        const auto& [i, j] = nonWinSymbols[randIdx];
++        const auto idx    = getCoinSymbolForCRRep (wsCol.activeLevel, coinSet);
++        const auto valueX = COIN_VALUES_X[idx];
++
++        window[i][j] = CS;
++        coinSymbols.push_back ({
++            i, j,
++            window[i][j], valueX,
++            valueX * refBetBase,
++            valueX * refBetBase,
++        });
++
++        nonWinSymbols.erase (nonWinSymbols.begin() + randIdx);
++    }
++
++    return dfTriggered;
+ }
+ 
+ void PayWindow::printHighlightWinningSyms (std::map<Symbol, WinSym> symMap) {
+diff --git a/core/src/game/paywindow.h b/core/src/game/paywindow.h
+index b2d73eb..537b188 100644
+--- a/core/src/game/paywindow.h
++++ b/core/src/game/paywindow.h
+@@ -49,9 +49,7 @@ public:
+         CoinSym_Vec& coinSymbols,
+         const int64_t& refBetBase,
+         const WildCollection& wsCol,
+-        const CoinSet& coinSet,
+-        const bool removeLowest,
+-        const bool extraSpin
++        const CoinSet& coinSet
+     );
+     void replaceCR (
+         const bool extraWilds,
+@@ -60,10 +58,8 @@ public:
+         CoinSym_Vec& coinSymbols,
+         const CoinSet& coinSet,
+         SymCoords_Vec& wildSyms,
+-        const bool firstExtraSpin,
+-        const bool gtdWildSpecial,
+-        const bool removeLowest,
+-        const bool extraSpin
++        const bool firstExtraSpin = false,
++        const bool gtdWildSpecial = false
+     );
+ 
+     std::vector<std::pair<int, int>> scatterHookPositions (
+@@ -71,12 +67,22 @@ public:
+         const std::array<int, REEL_COUNT>& spinStops
+     );
+ 
+-    bool scatterHook (Spin& _spin, const int mode);
++    bool scatterHook (Spin& _spin);
+     bool shouldReSpin ();
+     void applyNudgingReels (std::vector<std::pair<int, int>>& nudgingReelsMeta, std::string nudgingReelSet, const int mode);
+ 
++    // features
++    bool wildHookFeature (const CoinSym_Vec& coinSyms, const bool moreDynamite, SymCoords_Vec& wildSymbols);
++    bool dynamiteFeature (
++        const bool moreDynamite,
++        const WildCollection& wsCol,
++        const CoinSet& coinSet,
++        CoinSym_Vec& coinSymbols,
++        const int64_t refBetBase
++    );
++
+     void selectReelSetByNameAndWeights (const int mode, const std::string& baseGameReelset);
+-    int getCoinSymbolForCRRep (const int& wsColLevel, const CoinSet& coinSet, const bool removeLowest, const bool extraSpin);
++    int getCoinSymbolForCRRep (const int& wsColLevel, const CoinSet& coinSet);
+ 
+     Grid snapshot();
+     // More optimized version
+@@ -111,235 +117,108 @@ inline constexpr int MAX_WS_PLACEMENT_LIMIT = 2;
+ inline const std::vector<std::vector<std::vector<int>>> CR_REPLACEMENT_WS_COUNT_NO_EXTRA_WILDS = {
+     { /* level 1 */
+         { 10000,  920,   0 }, /* 1 CR -> WS { 0, 1, 2 } */
+-        { 10000, 3702,  49 }, /* 2 CR -> WS { 0, 1, 2 } */
+-        { 10000, 3589, 246 }, /* 3 CR -> WS { 0, 1, 2 } */
++        { 10000, 3581,  49 }, /* 2 CR -> WS { 0, 1, 2 } */
++        { 10000, 3471, 246 }, /* 3 CR -> WS { 0, 1, 2 } */
+     },
+     { // level 2
+         { 10000,  784,   0 },
+-        { 10000, 2740,  42 },
+-        { 10000, 2368, 123 },
++        { 10000, 2650,  42 },
++        { 10000, 2291, 123 },
+     },
+     { // level 3
+         { 10000,  551,   0 },
+-        { 10000, 2461,  22 },
+-        { 10000, 2122,  14 },
++        { 10000, 2381,  22 },
++        { 10000, 2053,  14 },
+     },
+     { // level 4
+         { 10000,  0,     0 },
+-        { 10000, 2179,   0 },
+-        { 10000, 1889,  10 },
++        { 10000, 2108,   0 },
++        { 10000, 1827,  10 },
+     },
+ };
+ 
+ inline const std::vector<std::vector<std::vector<int>>> CR_REPLACEMENT_WS_COUNT_EXTRA_WILDS = {
+     { /* level 1 */
+         { 10000,  920,   0 }, /* 1 CR -> WS { 0, 1, 2 } */
+-        { 10000, 4312,  49 }, /* 2 CR -> WS { 0, 1, 2 } */
+-        { 10000, 4515,  343 }, /* 3 CR -> WS { 0, 1, 2 } */
++        { 10000, 4171,  49 }, /* 2 CR -> WS { 0, 1, 2 } */
++        { 10000, 1827,  10 }, /* 3 CR -> WS { 0, 1, 2 } */
+     },
+     { // level 2
+-        { 10000,  784,   0 },
+-        { 10000, 3116,  59 },
+-        { 10000, 2898, 179 },
++        { 10000,  920,   0 },
++        { 10000, 3014,  59 },
++        { 10000, 4367, 179 },
+     },
+     { // level 3
+-        { 10000,  551,   0 },
+-        { 10000, 2773,  32},
+-        { 10000, 2582,  16 },
++        { 10000,  920,   0 },
++        { 10000, 2682,  32},
++        { 10000, 2498,  16 },
+     },
+     { // level 4
+-        { 10000,  0,     0 },
+-        { 10000, 2449,   0 },
+-        { 10000, 2283,  12 },
++        { 10000,  920,   0 },
++        { 10000, 2369,   0 },
++        { 10000, 2208,  12 },
+     },
+ };
+ 
+ inline const std::vector<std::vector<int>> CR_REPLACEMENT_CS_WEIGHTS_SET_A = {
+     { /* level 1 -> 1x */
+-        65210,
+-        43470,
+-        13670,
+-        3540,
+-        1410,
+-        350,
+-        65,
+-        35,
+-        25,
+-        10,
+-        7,
+-        3,
+-        1,
++        60210, 43470, 13670, /* 2, 5, 10 */
++         3540,  1410,   350, /* 15, 20, 25 */
++           65,    35,    25, /* 50, 100, 200 */
++           10,     7,     3, /* 500, 1666, 2500 */
++            1,               /* 5000 */
+     },
+     { /* level 2 -> 2x */
+-        71710,
+-        43470,
+-        13670,
+-        3540,
+-        1110,
+-        280,
+-        58,
+-        28,
+-        18,
+-        9,
+-        4,
+-        2,
+-        0,
++        67710, 43470, 13670,
++         3540,  1110,   280,
++           58,    28,    18,
++            9,     4,     2,
++            0,
+     },
+     { /* level 3 -> 3x */
+-        79510,
+-        43470,
+-        13270,
+-        3140,
+-        1010,
+-        270,
+-        56,
+-        26,
+-        15,
+-        6,
+-        3,
+-        0,
+-        0,
++        75510, 43470, 13270,
++         3140,  1010,   270,
++           56,    26,    15,
++            6,     3,     0,
++            0,
+     },
+     { /* level 4 -> 10x */
+-        84510,
+-        43470,
+-        12670,
+-        2940,
+-        910,
+-        250,
+-        52,
+-        24,
+-        14,
+-        4,
+-        0,
+-        0,
+-        0,
++        80510, 43470, 12670,
++         2940,   910,   250,
++           52,    24,    14,
++            4,     0,     0,
++            0,
+     }
+ };
+ 
+ inline const std::vector<std::vector<int>> CR_REPLACEMENT_CS_WEIGHTS_SET_B = {
+     { /* level 1 -> 1x */
+-        43210,
+-        43470,
+-        15670,
+-        4040,
+-        1510,
+-        450,
+-        85,
+-        35,
+-        25,
+-        10,
+-        7,
+-        5,
+-        1,
++        45210, 43470, 15670, /* 2, 5, 10 */
++         4040,  1510,   350, /* 15, 20, 25 */
++           65,    35,    25, /* 50, 100, 200 */
++           10,     7,     5, /* 500, 1666, 2500 */
++            1,               /* 5000 */
+     },
+     { /* level 2 -> 2x */
+-        50710,
+-        43470,
+-        15670,
+-        4040,
+-        1210,
+-        280,
+-        68,
+-        28,
+-        18,
+-        9,
+-        6,
+-        2,
+-        0,
++        52710, 43470, 15670,
++         4040,  1210,   280,
++           58,    28,    18,
++            9,     6,     2,
++            0,
+     },
+     { /* level 3 -> 3x */
+-        59510,
+-        43470,
+-        15670,
+-        4040,
+-        1110,
+-        270,
+-        56,
+-        26,
+-        16,
+-        7,
+-        3,
+-        0,
+-        0,
+-    },
+-    { /* level 4 -> 10x */
+-        67510,
+-        43470,
+-        15670,
+-        4040,
+-        1010,
+-        260,
+-        55,
+-        25,
+-        15,
+-        4,
+-        0,
+-        0,
+-        0,
+-    }
+-};
+-
+-inline const std::vector<std::vector<int>> CR_REPLACEMENT_CS_WEIGHTS_SET_C = {
+-    { /* level 1 -> 1x */
+-        0,
+-        76680,
+-        25670,
+-        4040,
+-        1510,
+-        450,
+-        85,
+-        35,
+-        25,
+-        10,
+-        7,
+-        5,
+-        1
+-    },
+-    { /* level 2 -> 2x */
+-        0,
+-        84180,
+-        25670,
+-        4040,
+-        1210,
+-        280,
+-        68,
+-        28,
+-        18,
+-        9,
+-        6,
+-        2,
+-        0,
++        61510, 43470, 15670,
++         4040,  1110,   270,
++           56,    26,    16,
++            7,     3,     0,
++            0,
+     },
+     { /* level 4 -> 10x */
+-        0,
+-        92980,
+-        25670,
+-        4040,
+-        1110,
+-        270,
+-        56,
+-        26,
+-        16,
+-        7,
+-        3,
+-        0,
+-        0,
+-    },
+-    { /* level 3 -> 3x */
+-        0,
+-        100980,
+-        25670,
+-        4040,
+-        1010,
+-        260,
+-        55,
+-        25,
+-        15,
+-        4,
+-        0,
+-        0,
+-        0,
++        69510, 43470, 15670,
++         4040,  1010,   260,
++           55,    25,    15,
++            4,     0,     0,
++            0,
+     }
+ };
+ 
+@@ -348,3 +227,17 @@ inline const std::vector<std::vector<int>> CR_REPLACEMENT_CS_WEIGHTS_SET_C = {
+ constexpr inline const double SCATTER_HOOK_PROB_REGULAR     = 0.0425;
+ constexpr inline const double SCATTER_HOOK_PROB_BONUS_BOOST = 0.0995;
+ constexpr inline const double SCATTER_HOOK_PROB_SUPER_BOOST = 0.2;
++
++// Wild Hook Feature
++constexpr inline const double WILD_HOOK_FEATURE_WITHOUT_MORE_DYNAMITE = 0.005;
++constexpr inline const double WILD_HOOK_FEATURE_WITH_MORE_DYNAMITE    = 0.024;
++
++// dynamite feature
++constexpr inline const double DYNAMITE_FEATURE_WITHOUT_MORE_DYNAMITE = 0.15;
++constexpr inline const double DYNAMITE_FEATURE_WITH_MORE_DYNAMITE    = 0.59;
++
++const std::pair<std::vector<int>, std::vector<int>> DYNAMITE_FEAT_CS_SYMBOLS = {
++    { 3, 4, 5, 6, 7, 8, 9, 10, }, // count
++    { 20, 50, 60, 40, 25, 15, 10, 5, }, // weights
++};
++
+diff --git a/core/src/game/reel.h b/core/src/game/reel.h
+index 87aceca..0bea515 100644
+--- a/core/src/game/reel.h
++++ b/core/src/game/reel.h
+@@ -7,25 +7,25 @@
+ using Reel_V = std::vector<Symbol>;
+ 
+ class Reel {
+-    public:
+-        Reel (int index, const Reel_V& symbols, RngLib& rng) :
+-            id(index), reel(symbols), rng(rng)
++public:
++    Reel (int index, const Reel_V& symbols, RngLib& rng) :
++        id(index), reel(symbols), rng(rng)
+     {};
+ 
+-        inline unsigned int size () { return reel.size(); }
+-        inline int getId () { return id; }
+-        inline int setStop (int s) { stop = s < 0 ? reel.size() - std::abs(s)%reel.size() : s%reel.size(); return stop; }
+-        inline int moveBy (int m) { return setStop(stop + m); }
+-        inline int stopPos () { return stop; }
+-        inline Symbol symbolAt (int pos) { return reel[pos % reel.size()]; }
+-        inline const Reel_V getReel() { return reel; };
+-        int spin ();
++    inline unsigned int size () { return reel.size(); }
++    inline int getId () { return id; }
++    inline int setStop (int s) { stop = s < 0 ? reel.size() - std::abs(s)%reel.size() : s%reel.size(); return stop; }
++    inline int moveBy (int m) { return setStop(stop + m); }
++    inline int stopPos () { return stop; }
++    inline Symbol symbolAt (int pos) { return reel[pos % reel.size()]; }
++    inline const Reel_V getReel() { return reel; };
++    int spin ();
+ 
+-    private:
+-        const int id;
+-        const Reel_V& reel;
+-        RngLib& rng;
+-        int stop = -1;
++private:
++    const int id;
++    const Reel_V& reel;
++    RngLib& rng;
++    int stop = -1;
+ };
+ 
+ 
+@@ -33,249 +33,145 @@ class Reel {
+ // ------------------------- Regular Reel Sets -------------------------
+ //
+ // Set 1
+-const std::vector<std::vector<Symbol>> RGSet1 =  {
++const std::vector<std::vector<Symbol>> RGSet1 = {
+     { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, CS, L7, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, L6, L8, },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, L7, H4,
+-        L9, H3, L10, SC, L6, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2,
+-        L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, SC, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, SC, L10, H4, H3, L6, CS, L7, H4, L9, H3,
+-        L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, H4, L7, L9, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, SC, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, L8, L9, SC, L10, CS, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet2 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC,
+-        L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9,
+-        H4, L6, CS, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7,
+-        H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, L7, H4, L9, H3, L7, H2, L10,
+-        H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, CS, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L7, H4, L9, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2,
+-        L10, H4, L9, H1, L6, L7, L8, CS, L9, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet3 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC,
+-        L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9,
+-        H4, L6, CS, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2,
+-        L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, SC, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, SC, L7, H4, L9, H3, L7,
+-        H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, CS, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, L8, L9, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet4 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC,
+-        L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9,
+-        H4, L6, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2,
+-        L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2,
+-        L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, SC, L7, L8, L9, SC, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet5 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, SC, L9, L7, SC,
+-        L6, L9, H4, L7, H3, L8, SC, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, CS, L7, SC, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, CS, L7,
+-        H4, L9, H3, L10, L6, L7, H2, L6, H3, L10, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7,
+-        H2, L10, SC, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2,
+-        L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, SC, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2,
+-        L10, H4, L9, H1, L6, L7, L8, CS, L9, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet6 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, L9, L7, SC, L6,
+-        L9, H4, L7, H3, L8, SC, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, CS, L7, SC, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, L7, H4,
+-        L9, H3, L10, CS, L6, L7, H2, L6, H3, L10, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7,
+-        H2, L10, SC, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2,
+-        L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, SC, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, L8, SC, L9, L10, CS, L6, L7, H2, L10, L7,
+-    },
+-};
+-const std::vector<std::vector<Symbol>> RGSet7 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC,
+-        L6, L9, H4, L7, H3, L8, SC, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, L7, H4,
+-        L9, H3, L10, L6, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2,
+-        L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, SC, L6, H3, CS, L8, H4, L7, SC, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, CS, H2, H1, CS, CS, L8, SC, L6, L10, H4, H3, L6, SC, L7, H4,
+-        L9, H3, L7, H2, L10, H4, L7, SC, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, SC, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, CS, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, L8, SC, L9, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-const std::vector<std::vector<Symbol>> RGSet8 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, CS, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, L7, L6, L9, H4,
+-        L7, H3, L8, L10, L6, H2, L7, L10, H4, L6, L10, H1, L8, L7, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9,
+-        H4, L6, SC, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7,
+-        H2, L10, SC, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, SC, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7,
+-        H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, SC, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, L8, L9, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet9 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, CS, L7, L6, L9, H4,
+-        L7, H3, L8, L10, L6, H2, L7, L10, H4, L6, L10, H1, L8, L7, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9,
+-        H4, L6, CS, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7,
+-        H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2,
+-        L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, SC, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, SC, L8, L9, CS, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet10 =  {
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, CS, L7, L6, L9, H4,
+-        L7, H3, L8, L10, L6, H2, L7, L10, H4, L6, L10, H1, L8, L7, L6, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, CS, L10, H2, H1, H4, L8, SC, L10, H3,
+-        L9, H4, L6, SC, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2,
+-        L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, L9, SC, L6, H3, CS, L8, H4, L7, SC, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, SC, L6, CS, L10, H4, H3, L6, SC, L7, H4,
+-        L9, H3, L7, H2, L10, H4, L7, SC, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, SC, L7, L9, L10,
+-    },
+-    {
+-        CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6,
+-        H2, L10, H4, L9, H1, L6, L7, L8, SC, L9, L10, L6, L7, H2, L10, L7,
+-    },
+-};
+-
+-const std::vector<std::vector<Symbol>> RGSet11 =  {
+-    {
+-        CS, CS, CS, L10, H2, L9, H1, L8, H4, L7, H3, L6, H1, L7, H2, H3, L6, H4,
+-    },
+-    {
+-        CS, CS, CS, L10, H1, L9, H2, L8, H3, L7, H4, L6, H1, L7, L8, H3, H2, H4, L6,
+-    },
+-    {
+-        CS, CS, CS, L9, H2, L10, H1, L7, H4, L8, H3, L6, H1, L8, L7, H2, H3, L6, H4,
+-    },
+-    {
+-        CS, CS, CS, L9, H1, L10, H2, L7, H4, L8, H3, L6, H1, L7, L8, H3, H2, H4, L6,
+-    },
+-    {
+-        CS, CS, CS, H3, L10, L6, H2, H4, L8, H3, L7, H4, H1, L9, H2, L7, H3, H4, L8, H1, L6, H3,
+-    },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, L7, H4, L9, H3, L10, SC, L6, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, SC, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, SC, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, H4, L7, L9, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, SC, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, L9, SC, L10, CS, L6, L7, H2, L10, L7, },
++};
++
++// Set 2
++const std::vector<std::vector<Symbol>> RGSet2 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9, H4, L6, CS, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, CS, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L7, H4, L9, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, CS, L9, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 3
++const std::vector<std::vector<Symbol>> RGSet3 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9, H4, L6, CS, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, SC, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, SC, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, CS, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, L9, L10, L6, L7, H2, L10, L7, },
+ };
+ 
++// Set 4
++const std::vector<std::vector<Symbol>> RGSet4 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9, H4, L6, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, SC, L7, L8, L9, SC, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 5
++const std::vector<std::vector<Symbol>> RGSet5 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, SC, L9, L7, SC, L6, L9, H4, L7, H3, L8, SC, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, CS, L7, SC, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, CS, L7, H4, L9, H3, L10, L6, L7, H2, L6, H3, L10, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7, H2, L10, SC, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, SC, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, CS, L9, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 6
++const std::vector<std::vector<Symbol>> RGSet6 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, L9, L7, SC, L6, L9, H4, L7, H3, L8, SC, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, CS, L7, SC, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, L7, H4, L9, H3, L10, CS, L6, L7, H2, L6, H3, L10, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7, H2, L10, SC, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, SC, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, SC, L9, L10, CS, L6, L7, H2, L10, L7, },
++};
++
++// Set 7
++const std::vector<std::vector<Symbol>> RGSet7 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, SC, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, SC, L8, H4, CS, L9, L7, SC, L6, L9, H4, L7, H3, L8, SC, L10, L6, H2, L7, H4, L10, SC, L6, L10, H1, L8, L7, SC, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, L9, L7, CS, L10, H4, L9, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, L9, L10, H2, H1, H4, L8, L10, H3, L9, H4, L6, L7, H4, L9, H3, L10, L6, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, SC, L6, H3, CS, L8, H4, L7, SC, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, CS, H2, H1, CS, CS, L8, SC, L6, L10, H4, H3, L6, SC, L7, H4, L9, H3, L7, H2, L10, H4, L7, SC, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, SC, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, CS, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, SC, L9, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 8
++const std::vector<std::vector<Symbol>> RGSet8 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, CS, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, L7, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, L10, H4, L6, L10, H1, L8, L7, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9, H4, L6, SC, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, CS, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7, H2, L10, SC, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, SC, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, SC, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, L9, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 9
++const std::vector<std::vector<Symbol>> RGSet9 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, CS, L7, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, L10, H4, L6, L10, H1, L8, L7, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, L10, H2, H1, H4, L8, SC, L10, H3, L9, H4, L6, CS, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, SC, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, SC, L9, H4, L6, SC, L9, L8, SC, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, H3, L6, SC, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, L6, H3, CS, L8, H4, L7, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, L6, L10, H4, H3, L6, CS, L7, H4, L9, H3, L7, H2, L10, H4, L7, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, SC, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, SC, L8, L9, CS, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 10
++const std::vector<std::vector<Symbol>> RGSet10 = {
++    { CS, CS, CS, CS, CS, CS, L9, H4, L10, CS, L9, H3, L6, L8, L7, H1, L10, H2, L9, H3, H4, CS, CS, H2, H4, L7, H3, H4, H2, CS, CS, L6, L8, H4, L9, CS, L7, L6, L9, H4, L7, H3, L8, L10, L6, H2, L7, L10, H4, L6, L10, H1, L8, L7, L6, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L8, SC, L9, L7, CS, L10, H4, L9, SC, L8, CS, CS, H4, L6, H1, L8, H4, H2, CS, CS, H3, L6, SC, L9, CS, L10, H2, H1, H4, L8, SC, L10, H3, L9, H4, L6, SC, L7, H4, L9, H3, L10, L6, SC, L7, H2, L6, H3, L10, L6, H2, H4, L8, },
++
++    { CS, CS, CS, CS, CS, CS, L7, L9, CS, L6, L8, CS, L7, L6, L10, CS, CS, H4, H2, L8, H3, H4, CS, CS, L7, H1, L10, H2, H4, H3, L9, H4, L6, L9, L8, L7, H2, L10, L7, H2, L8, H4, L6, L9, H4, L10, L6, H3, L8, L6, H1, H4, L8, L10, L7, L6, L9, H3, },
++
++    { CS, CS, CS, CS, CS, CS, L9, SC, L6, H3, CS, L8, H4, L7, SC, L6, L9, L10, H4, L9, CS, CS, L8, H4, L7, H2, H1, CS, CS, L8, SC, L6, CS, L10, H4, H3, L6, SC, L7, H4, L9, H3, L7, H2, L10, H4, L7, SC, L8, H2, L9, H4, L6, H2, L10, H1, H3, L6, SC, L7, L9, L10, },
++
++    { CS, CS, CS, CS, CS, CS, H4, H2, L6, CS, H4, L8, H3, CS, CS, L7, H2, L9, H4, L7, L10, L8, H4, L6, H3, L7, L9, CS, CS, L8, H4, H3, L8, CS, L10, H4, H3, L9, H1, L6, H2, L10, H4, L9, H1, L6, L7, L8, SC, L9, L10, L6, L7, H2, L10, L7, },
++};
++
++// Set 11
++const std::vector<std::vector<Symbol>> RGSet11 = {
++    { CS, CS, CS, L10, H2, L9, H1, L8, H4, L7, H3, L6, H1, L7, H2, H3, L6, H4, },
++    { CS, CS, CS, L10, H1, L9, H2, L8, H3, L7, H4, L6, H1, L7, L8, H3, H2, H4, L6, },
++    { CS, CS, CS, L9, H2, L10, H1, L7, H4, L8, H3, L6, H1, L8, L7, H2, H3, L6, H4, },
++    { CS, CS, CS, L9, H1, L10, H2, L7, H4, L8, H3, L6, H1, L7, L8, H3, H2, H4, L6, },
++    { CS, CS, CS, H3, L10, L6, H2, H4, L8, H3, L7, H4, H1, L9, H2, L7, H3, H4, L8, H1, L6, H3, },
++};
++
++
+ //
+ // ------------------------- Bonus Boost Reel Sets -------------------------
+ //
+@@ -585,6 +481,7 @@ const std::vector<std::vector<Symbol>> FSSet2 = {
+     { CR, CR, CR, H2, H3, CR, H4, L6, L10, CR, CR, H4, H3, H1, H2, CR, L9, L7, L8, L6, L10, L9, L7, L8, },
+ };
+ 
++
+ const std::vector<std::vector<std::vector<Symbol>>> RG_Sets_ALL = {
+     RGSet1, RGSet2, RGSet3, RGSet4,
+     RGSet5, RGSet6, RGSet7, RGSet8,
+diff --git a/core/src/game/reelset.h b/core/src/game/reelset.h
+index acaf44d..bc66c33 100644
+--- a/core/src/game/reelset.h
++++ b/core/src/game/reelset.h
+@@ -66,24 +66,11 @@ class Round;
+ constexpr inline int FORCED_REEL_COUNT = 3;
+ constexpr inline int FORCED_REEL_STOPS_SET_COUNT = 5;
+ 
+-inline const std::vector<int> Reel_Set_Default_Weights = {
+-    1, 1, 1, 1,
+-    1, 1, 1, 1,
+-    1, 1, 1
+-};
+-
+-inline const std::vector<int> Reel_Set_Weight_SetA = {
+-    1, 1, 1, 1,
+-    1, 1, 1, 1,
+-    1, 1, 7
+-};
+-
+-inline const std::vector<int> Reel_Set_Weight_SetB = {
+-    1, 1, 1, 1,
+-    1, 1, 1, 1,
+-    1, 1, 6 };
++inline const std::vector<int> Reel_Set_Default_Weights = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
++inline const std::vector<int> Reel_Set_Weight_SetA     = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7 };
++inline const std::vector<int> Reel_Set_Weight_SetB     = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6 };
+ 
+-inline const std::array<std::array<int, FORCED_REEL_COUNT>, REEL_COUNT> FORCED_REEL_STOPS_WITHOUT_MORE_COINS = {{
++inline const std::array<std::array<int, FORCED_REEL_COUNT>, REEL_COUNT> FORCED_REEL_STOPS_WITH_MORE_COINS = {{
+     { 3, 15, 5 },
+     { 18, 7, 12 },
+     { 4, 19, 23 },
+@@ -91,12 +78,12 @@ inline const std::array<std::array<int, FORCED_REEL_COUNT>, REEL_COUNT> FORCED_R
+     { 5, 8, 14 },
+ }};
+ 
+-inline const std::array<std::array<int, FORCED_REEL_COUNT>, REEL_COUNT> FORCED_REEL_STOPS_WITH_MORE_COINS = {{
+-    { 4, 16, 5 },
+-    { 19, 8, 13 },
+-    { 5, 20, 24 },
+-    { 15, 9, 15 },
+-    { 6, 9 , 15 },
++inline const std::array<std::array<int, FORCED_REEL_COUNT>, REEL_COUNT> FORCED_REEL_STOPS_WITHOUT_MORE_COINS = {{
++    { 1, 4, 16 },
++    { 2, 19, 8 },
++    { 3, 5, 20 },
++    { 4, 15, 9 },
++    { 5, 6, 9 },
+ }};
+ 
+ class ReelSet {
+diff --git a/core/src/game/round.cc b/core/src/game/round.cc
+index 3dd768f..b95f726 100644
+--- a/core/src/game/round.cc
++++ b/core/src/game/round.cc
+@@ -9,6 +9,8 @@
+ #include "extra-spin.h"
+ #include "symbols.h"
+ 
++// NOTE: tackle the issue of empty symbols grid, which causes seg-fault
++
+ Round::Round (
+         RngLib& rng,
+         PlayResponse& playResponse,
+@@ -161,7 +163,7 @@ int Round::runBaseSpin() {
+ 
+     baseSpin.numSC = payWindow.symbolCount (SC);
+ 
+-    const bool shf = payWindow.scatterHook (baseSpin, mode);
++    const bool shf = payWindow.scatterHook (baseSpin);
+     payWindow.snapshot (baseSpin.scatterHookSymbols); // always snap needed as to avoid seg-fault
+ 
+     baseSpin.refWinAmount         = refWAmt;
+@@ -208,6 +210,7 @@ void Round::reSpin (std::vector<std::pair<int, int>>& nudgingReelsMeta, const st
+     for (const auto& [i, stop]: nudgingReelsMeta)
+         spin.stops[i] = stop;
+ 
++
+     payWindow.drawCsSymbols (spin.coinSyms, playResponse.refBetBase);
+     spin.numSC = payWindow.symbolCount (SC);
+     if (spin.numSC < 2)
+@@ -383,7 +386,7 @@ FsPersistentValues Round::preFsSetup (const FsStatus& fsStatus) {
+     fpv.extraWilds   = (fpv.features.find (FsFeature::MORE_WILDS)       != fpv.features.end());
+     fpv.startOnLvl2  = (fpv.features.find (FsFeature::START_ON_LEVEL_2) != fpv.features.end());
+     fpv.extra2Spins  = (fpv.features.find (FsFeature::EXTRA_2_SPINS)    != fpv.features.end());
+-    fpv.removeLowest = (fpv.features.find (FsFeature::REMOVE_LOWEST)    != fpv.features.end());
++    fpv.moreDynamite = (fpv.features.find (FsFeature::MORE_DYNAMITE)    != fpv.features.end());
+ 
+ 
+     if (fpv.startOnLvl2) {
+@@ -415,13 +418,34 @@ void Round::fsBaseRun (FsPersistentValues& persistent, FreeSpin& freeSpin, bool
+             persistent.coinSet,
+             freeSpin.wildSyms,
+             persistent.firstExtraSpin,
+-            gtdWildSpecial,
+-            persistent.removeLowest,
+-            persistent.extraSpin
++            gtdWildSpecial
+             );
+ 
+     payWindow.snapshot (freeSpin.stoppedGrid);
+     payWindow.snapshot (freeSpin.scatterHookSymbols);
++
++    const bool whf = payWindow.wildHookFeature (freeSpin.coinSyms, persistent.moreDynamite, freeSpin.wildSyms);
++    if (whf) {
++        freeSpin.wildHookGrid.filled = true;
++        payWindow.snapshot (freeSpin.wildHookGrid.grid);
++    }
++
++    const bool df = payWindow.dynamiteFeature (
++            persistent.moreDynamite,
++            persistent.wsCollected,
++            persistent.coinSet,
++            freeSpin.coinSyms,
++            playResponse.refBetBase
++            );
++
++    if (df) {
++        freeSpin.dynamiteGrid.filled = true;
++        payWindow.snapshot (freeSpin.dynamiteGrid.grid);
++    }
++
++    if (df && whf)
++        throw_error ("dynamite-feat & wild-hook-feat both active, shouldn't be");
++
+     gtdWildSpecial = false; // reset once done with it.
+ }
+ 
+@@ -492,7 +516,7 @@ void Round::preFsValidation (const FsStatus& fsStatus) {
+ }
+ 
+ void Round::updateForcedWinFs (FsPersistentValues& persistent, const int64_t refWinsSoFar, bool& forced, const FreeSpin& fs) {
+-    if (fs.index == persistent.numSpins - 1 && persistent.wsCollected.activeLevel == persistent.wsCollected.triggeredLevel && refWinsSoFar == 0)
++    if (fs.index == persistent.numSpins - 2 && fs.extraSpins == 0 && refWinsSoFar == 0)
+         forced = true;
+     else
+         forced = false;
+@@ -549,10 +573,12 @@ void Round::runFreeSpins () {
+         FreeSpin freeSpin;
+         freeSpin.index   = i;
+ 
+-        updateForcedWinFs (persistent, refWinsSoFar, forced, freeSpin);
++        //TODO: fake wild hook and dynamite
++
+         fsBaseRun (persistent, freeSpin, forced, persistent.moreCoins, gtdWildSpecial);
+         updateFsLevelInfo (persistent, freeSpin, currLevelSpinsLeft);
+         evalFsWinnings (persistent, freeSpin, refWinsSoFar, maxWinTriggered);
++        updateForcedWinFs (persistent, refWinsSoFar, forced, freeSpin);
+         guaranteedWildsSpecial (persistent, refWinsSoFar, freeSpin, gtdWildSpecial);
+ 
+         playResponse.freeSpins.push_back (freeSpin);
+@@ -584,7 +610,7 @@ FsPersistentValues Round::getExtraSpinsPersistent (const PlayResponse& prevResp)
+     fpv.numSpins         = 1;
+     fpv.numFeatures      = activeFeatStrs.size();
+     fpv.moreCoins        = esi.moreCoins;
+-    fpv.removeLowest     = esi.removeLowest;
++    fpv.moreDynamite     = esi.moreDynamite;
+     fpv.extra2Spins      = esi.extra2Spins;
+     fpv.extraWilds       = esi.extraWilds;
+     fpv.extraSpin        = true;
+@@ -636,6 +662,7 @@ void Round::runExtraSpins (const PlayResponse& prevResp) {
+ 
+         if (!persistent.firstExtraSpin) {
+             //TODO: guaranteed wild special rule
++            //TODO: fake wild hook and dynamite
+         }
+ 
+         fsBaseRun (persistent, freeSpin, false, persistent.moreCoins, gtdWildSpecial);
+diff --git a/core/src/game/round.h b/core/src/game/round.h
+index d2a1839..7767d35 100644
+--- a/core/src/game/round.h
++++ b/core/src/game/round.h
+@@ -25,7 +25,7 @@ struct FsPersistentValues {
+     bool extraWilds   = false;
+     bool startOnLvl2  = false;
+     bool extra2Spins  = false;
+-    bool removeLowest = false;
++    bool moreDynamite = false;
+ 
+     std::map<FsFeature, bool> features;
+     WildCollection wsCollected;
+@@ -93,22 +93,34 @@ inline constexpr std::array<WsCollection, MAX_FS_LEVEL-1> WS_COLLECTION_SPECS =
+ }};
+ 
+ #if defined(VARIANT_96)
+-inline constexpr double ProbReelWeightRegularSetA    = 0.2723;
+-inline constexpr double ProbReelWeightBonusBoostSetA = 0.2401;
+-inline constexpr double ProbReelWeightSuperBoostSetA = 0.4412;
+-inline constexpr std::array<double, MAX_FS_LEVEL> COIN_WEIGHT_SET_PROB_A = { 0.3194, 0.2969, 0.2188, 0.3623, 0.3614, };
++inline constexpr double ProbReelWeightRegularSetA    = 0.2731;
++inline constexpr double ProbReelWeightBonusBoostSetA = 0.2404;
++inline constexpr double ProbReelWeightSuperBoostSetA = 0.4410;
++
++inline constexpr std::array<double, MAX_FS_LEVEL> COIN_WEIGHT_SET_PROB_A = {
++    0.2962, 0.3167, 0.2299,
++    0.3447, 0.3051,
++};
+ 
+ #elif defined(VARIANT_94)
+-inline constexpr double ProbReelWeightRegularSetA    = 0.4949;
+-inline constexpr double ProbReelWeightBonusBoostSetA = 0.3592;
+-inline constexpr double ProbReelWeightSuperBoostSetA = 0.5015;
+-inline constexpr std::array<double, MAX_FS_LEVEL> COIN_WEIGHT_SET_PROB_A = { 0.5177, 0.4994, 0.4258, 0.5681, 0.5686, };
++inline constexpr double ProbReelWeightRegularSetA    = 0.4960;
++inline constexpr double ProbReelWeightBonusBoostSetA = 0.3595;
++inline constexpr double ProbReelWeightSuperBoostSetA = 0.5013;
++
++inline constexpr std::array<double, MAX_FS_LEVEL> COIN_WEIGHT_SET_PROB_A = {
++    0.5073, 0.5275, 0.4451,
++    0.5585, 0.5204,
++};
+ 
+ #elif defined(VARIANT_92)
+-inline constexpr double ProbReelWeightRegularSetA    = 0.7282;
+-inline constexpr double ProbReelWeightBonusBoostSetA = 0.4838;
+-inline constexpr double ProbReelWeightSuperBoostSetA = 0.5645;
+-inline constexpr std::array<double, MAX_FS_LEVEL> COIN_WEIGHT_SET_PROB_A = { 0.716, 0.702, 0.6328, 0.7739, 0.7758, };
++inline constexpr double ProbReelWeightRegularSetA    = 0.7294;
++inline constexpr double ProbReelWeightBonusBoostSetA = 0.4840;
++inline constexpr double ProbReelWeightSuperBoostSetA = 0.5643;
++
++inline constexpr std::array<double, MAX_FS_LEVEL> COIN_WEIGHT_SET_PROB_A = {
++    0.7184, 0.7382, 0.6603,
++    0.7723, 0.7358,
++};
+ 
+ #else
+ #error "no variant selected"
+@@ -136,7 +148,7 @@ inline constexpr std::array<int, NUM_FS_FEATURES> NUM_FS_FEATURES_WEIGHT = {
+ 
+ inline constexpr std::array<FsFeature, NUM_FS_FEATURES - 1> FS_FEATURES = {{
+     FsFeature::MORE_WILDS, FsFeature::START_ON_LEVEL_2,
+-    FsFeature::REMOVE_LOWEST, FsFeature::MORE_COINS,
++    FsFeature::MORE_DYNAMITE, FsFeature::MORE_COINS,
+     FsFeature::EXTRA_2_SPINS
+ }};
+ 
+@@ -146,7 +158,7 @@ inline const std::string FS_FEATURE_STR (const FsFeature& feat) {
+     switch (feat) {
+         case FsFeature::MORE_WILDS:       featStr = "MORE_WILDS"; break;
+         case FsFeature::START_ON_LEVEL_2: featStr = "START_ON_LEVEL_2"; break;
+-        case FsFeature::REMOVE_LOWEST:    featStr = "REMOVE_LOWEST"; break;
++        case FsFeature::MORE_DYNAMITE:    featStr = "MORE_DYNAMITE"; break;
+         case FsFeature::MORE_COINS:       featStr = "MORE_COINS"; break;
+         case FsFeature::EXTRA_2_SPINS:    featStr = "EXTRA_2_SPINS"; break;
+         case FsFeature::NONE:             featStr = "NONE"; break;
+@@ -163,8 +175,8 @@ inline const FsFeature FS_FEATURE_FROM_STR (const std::string& featStr) {
+         feat = FsFeature::MORE_WILDS;
+     } else if (featStr == "START_ON_LEVEL_2") {
+         feat = FsFeature::START_ON_LEVEL_2;
+-    } else if (featStr == "REMOVE_LOWEST") {
+-        feat = FsFeature::REMOVE_LOWEST;
++    } else if (featStr == "MORE_DYNAMITE") {
++        feat = FsFeature::MORE_DYNAMITE;
+     } else if (featStr == "MORE_COINS") {
+         feat = FsFeature::MORE_COINS;
+     } else if (featStr == "EXTRA_2_SPINS") {
+@@ -175,7 +187,7 @@ inline const FsFeature FS_FEATURE_FROM_STR (const std::string& featStr) {
+         throw_error (
+                 "invalid feature mode = ",
+                 featStr,
+-                ", must be one of these: [``MORE_WILDS``, ``START_ON_LEVEL_2``, ``REMOVE_LOWEST``, ``MORE_COINS``, ``EXTRA_2_SPINS`]"
++                ", must be one of these: [``MORE_WILDS``, ``START_ON_LEVEL_2``, ``MORE_DYNAMITE``, ``MORE_COINS``, ``EXTRA_2_SPINS`]"
+         );
+     }
+ 
+diff --git a/core/src/game/symbols.h b/core/src/game/symbols.h
+index 682664c..af7b52d 100644
+--- a/core/src/game/symbols.h
++++ b/core/src/game/symbols.h
+@@ -46,8 +46,6 @@ const char* const SymbolChar[] = {
+ };
+ 
+ const std::vector<Symbol> RegularPaySymbols = { H1, H2, H3, H4, L6, L7, L8, L9 };
+-const int REMOVE_LOWEST_COIN_2X_IDX = 0;
+-const int REMOVE_LOWEST_COIN_5X_IDX = 1;
+ const std::vector<int64_t> COIN_VALUES_X = {
+     2, 5, 10, 15, 20,
+     25, 50, 100, 200, 500,
+diff --git a/core/src/utils/data-conversion.cc b/core/src/utils/data-conversion.cc
+index 61b38d2..2870412 100644
+--- a/core/src/utils/data-conversion.cc
++++ b/core/src/utils/data-conversion.cc
+@@ -385,6 +385,8 @@ Napi::Object freeSpinToNAPI(Napi::Env env, const FreeSpin& freeSpin, const bool
+     obj.Set("runningWinAmount", Napi::Number::New(env, freeSpin.runningWinAmount));
+     obj.Set("extraSpins",       Napi::Number::New(env, freeSpin.extraSpins));
+     obj.Set("spinType",         Napi::String::New(env, freeSpin.spinType));
++    obj.Set ("wildHookGrid", gridToNAPI (env, freeSpin.wildHookGrid.grid, !freeSpin.wildHookGrid.filled));
++    obj.Set ("dynamiteGrid", gridToNAPI(env, freeSpin.dynamiteGrid.grid, !freeSpin.dynamiteGrid.filled));
+ 
+     Napi::Array reSpins = Napi::Array::New(env, freeSpin.reSpins.size());
+     for (size_t i = 0; i < freeSpin.reSpins.size(); ++i) {
+@@ -749,6 +751,19 @@ FreeSpin freeSpinToNative (Napi::Object& fsObj) {
+     FreeSpin fs;
+ 
+     extract (fsObj, "extraSpins", fs.extraSpins);
++
++    Napi::Array dGridArr = fsObj.Get ("dynamiteGrid").As<Napi::Array>();
++    if (!dGridArr.IsNull() && !dGridArr.IsUndefined() && dGridArr.IsArray() && dGridArr.Length() > 0) {
++        fs.dynamiteGrid.filled = true;
++        fs.dynamiteGrid.grid = toGridNative (dGridArr);
++    }
++
++    Napi::Array whGridArr = fsObj.Get ("wildHookGrid").As<Napi::Array>();
++    if (!whGridArr.IsNull() && !whGridArr.IsUndefined() && whGridArr.IsArray() && whGridArr.Length() > 0) {
++        fs.wildHookGrid.filled = true;
++        fs.wildHookGrid.grid = toGridNative (whGridArr);
++    }
++
+     toSpinNative(fsObj, fs);
+ 
+     return fs;

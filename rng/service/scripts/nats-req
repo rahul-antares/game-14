@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+
+const Nats        = require ('../common/nats-core');
+const jclrz       = require ('json-colorz');
+const fs          = require ('fs');
+const colors      = require ('colors');
+const { program } = require('commander');
+
+program
+    .showHelpAfterError()
+    .requiredOption('-c, --ch <channel>', 'channel to publish on')
+    .requiredOption('-f, --data-file <file>', 'data file')
+    .parse (process.argv)
+;
+
+const options = program.opts ();
+
+async function connect () {
+	Nats.on ('nats.connected', (servers) => { console.log (colors.green (`[ NATS-EVENT ] connected : servers => ${servers}`))});
+	Nats.on ('nats.disconnected', (data) => { console.error (colors.red (`[ NATS-EVENT ] disconnected`))});
+	Nats.on ('nats.reconnecting', (data) => { console.log (colors.yellow (`[ NATS-EVENT ] reconnecting`))});
+	Nats.on ('nats.reconnected', (data)  => { console.log (colors.green (`[ NATS-EVENT ] reconnected`))});
+	Nats.on ('nats.updated', (data)      => { console.log (colors.green (`[ NATS-EVENT ] updated`), data)});
+	Nats.on ('nats.error', (err)         => { console.error (colors.red (`[ NATS-EVENT ] error : ${err.message}`))});
+
+    await Nats.init ({
+        maxReconnectAttempts : -1,
+        reconnectTimeWait    : 250
+    });
+}
+
+async function main () {
+	let data = { 'dummy-data' : true };
+
+	try {
+		await connect ();
+
+		if (options.dataFile) {
+			data = fs.readFileSync (options.dataFile, 'utf8');
+		}
+
+		console.log (colors.dim ('sending request to channel =>'), options.ch, '...');
+		const response = await Nats.request (options.ch, JSON.parse(data));
+        const { header } = response;
+        if (header.error)
+            throw new Error (`server responded with error: ${header.error}`);
+
+		console.log (colors.green ('response ='), (response));
+
+		await Nats.drain ();
+	}
+	catch (err) {
+		console.log (colors.red (err));
+		process.exit (1);
+	}
+}
+
+main ();

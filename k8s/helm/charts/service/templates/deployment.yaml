@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: "{{ .Release.Name }}"
+    version: "{{ .Chart.AppVersion }}"
+spec:
+  {{- $svc := index .Values.services .Release.Name }}
+
+  replicas: {{ default .Values.global.replicaCount $svc.replicaCount }}
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      {{- $strategy := default .Values.global.strategy $svc.strategy }}
+      maxUnavailable: {{ default 0 $strategy.maxUnavailable }}
+      maxSurge: {{ default 1 $strategy.maxSurge }}
+
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}"
+      version: "{{ .Chart.AppVersion }}"
+
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}"
+        version: "{{ .Chart.AppVersion }}"
+      {{- $annotations := default .Values.global.podAnnotations $svc.podAnnotations }}
+      {{- if $annotations }}
+      annotations:
+        {{- toYaml $annotations | nindent 8 }}
+      {{- end }}
+
+    spec:
+      terminationGracePeriodSeconds: {{ default .Values.global.terminationGracePeriodSeconds $svc.terminationGracePeriodSeconds }}
+
+      {{- $image := dict
+          "repository" $svc.image.repository
+          "tag"        (default .Values.global.image.tag $svc.image.tag)
+          "pullPolicy" (default .Values.global.image.pullPolicy $svc.image.pullPolicy)
+          "pullSecret" (default .Values.global.image.pullSecret $svc.image.pullSecret)
+      }}
+
+      {{- if $image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ $image.pullSecret }}
+      {{- end }}
+
+      {{- if or $svc.nodeSelector .Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml (default .Values.global.nodeSelector $svc.nodeSelector) | nindent 8 }}
+      {{- end }}
+
+      {{- if or $svc.topologySpreadConstraints .Values.global.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range (default .Values.global.topologySpreadConstraints $svc.topologySpreadConstraints) }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              app: "{{ $.Release.Name }}"
+        {{- end }}
+      {{- end }}
+
+      containers:
+        - name: "{{ .Release.Name }}"
+          image: "{{ $image.repository }}:{{ $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy }}
+
+          ports:
+            {{- range $svc.ports }}
+            - name: {{ .name }}
+              containerPort: {{ .targetPort }}
+              protocol: {{ default "TCP" .protocol }}
+            {{- end }}
+
+          securityContext:
+            {{- $security := default .Values.global.security $svc.security }}
+            runAsUser: {{ $security.runAsUser }}
+            allowPrivilegeEscalation: {{ $security.allowPrivilegeEscalation }}
+
+          {{- $lifecycle := default .Values.global.lifecycle $svc.lifecycle }}
+          {{- if $lifecycle }}
+          lifecycle:
+            {{- toYaml $lifecycle | nindent 12 }}
+          {{- end }}
+
+          {{- $probes := default .Values.global.probes $svc.probes }}
+          {{- if $probes }}
+          livenessProbe:
+            httpGet:
+              path: {{ default "/health" $probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ default 30 $probes.liveness.initialDelaySeconds }}
+
+          readinessProbe:
+            httpGet:
+              path: {{ default "/health" $probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ default 5 $probes.readiness.initialDelaySeconds }}
+
+          startupProbe:
+            httpGet:
+              path: {{ default "/health" $probes.startup.path }}
+              port: http
+            failureThreshold: {{ default 30 $probes.startup.failureThreshold }}
+          {{- end }}
+
+          {{- $envFrom := default .Values.global.envFrom $svc.envFrom }}
+          {{- if $envFrom }}
+          envFrom:
+            {{- range $envFrom.configMaps }}
+            - configMapRef:
+                name: {{ . }}
+            {{- end }}
+            {{- range $envFrom.secrets }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          {{- end }}
+
+          env:
+            {{- range (default .Values.global.env $svc.env) }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+
+          resources:
+            {{- toYaml (default .Values.global.resources $svc.resources) | nindent 12 }}
+
+          {{- $volumeMounts := default .Values.global.volumeMounts $svc.volumeMounts }}
+          {{- if $volumeMounts }}
+          volumeMounts:
+            {{- toYaml $volumeMounts | nindent 12 }}
+          {{- end }}
+
+      {{- $volumes := default .Values.global.volumes $svc.volumes }}
+      {{- if $volumes }}
+      volumes:
+        {{- toYaml $volumes | nindent 8 }}
+      {{- end }}
+

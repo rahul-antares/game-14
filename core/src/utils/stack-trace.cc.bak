@@ -1,0 +1,17 @@
+#include "stack-trace.h"
+
+void printStackTrace() {
+    void* frames[MAX_FRAMES];
+    int numFrames  = backtrace(frames, MAX_FRAMES);
+    char** symbols = backtrace_symbols(frames, numFrames);
+
+    std::cerr << ANSI_BG_COLOR_RED "Stack trace" ANSI_COLOR_RESET << ":" << std::endl;
+
+    for (int i = 0; i < numFrames; ++i) {
+        std::cerr << "    " << symbols[i] << std::endl;
+    }
+
+    free(symbols); // Must free symbols after use
+}
+
+

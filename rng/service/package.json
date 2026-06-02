@@ -1,0 +1,29 @@
+{
+	"name": "rng-service",
+	"version": "1.0.0",
+	"description": "RNG Service",
+	"engines": {
+		"node": ">=20",
+		"npm": ">=10"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+        "build": "cmake-js -d grpc build",
+        "debug": "cmake-js -d grpc build --debug",
+		"start": "node index.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"optionalDependencies": {
+		"@esbuild/darwin-arm64": "^0.24.0",
+		"@rollup/rollup-linux-x64-musl": "4.9.5"
+	},
+	"dependencies": {
+		"bunyan": "^1.8.15",
+		"colors": "^1.4.0",
+		"deep-diff": "^1.0.2",
+		"json-colorz": "^0.2.7",
+		"nats": "^2.29.1"
+	}
+}

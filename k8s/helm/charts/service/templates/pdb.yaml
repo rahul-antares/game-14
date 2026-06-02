@@ -1,0 +1,16 @@
+{{- $svc := index .Values.services .Release.Name -}}
+{{- $pdb := default .Values.global.pdb $svc.pdb -}}
+{{- if $pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  minAvailable: {{ default 0 $pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+{{- end }}

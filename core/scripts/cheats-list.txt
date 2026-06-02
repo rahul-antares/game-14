@@ -1,0 +1,156 @@
+--minWin 10
+--minWin 200
+--minWin 10
+
+--maxWin 10
+--maxWin 300
+
+--paylineWin 20
+--paylineWin 1
+--paylineWin 9
+
+--stops 1,2,3,4,-1
+--stops -1,2,3,4,-1
+--stops 1000,20000,3,9,-1
+
+--winSymbol H1
+--winSymbol H3
+--winSymbol H3 --winSymbolCount 4
+--winSymbol H2 --winSymbolCount 4
+
+--minWin 100 --winSymbol H1
+--minWin 50 --winSymbol H1
+--winSymbolCount 4 --winSymbol H1 --excludeSymbol L8
+
+--reelset 1
+--reelset 2
+--reelset 9
+--reelset 10
+--reelset 11
+
+--coinValue 10
+--coinValue 50
+--coinValue 100
+--coinValue 500
+--coinValue 1666
+
+--numCoins -1
+--numCoins 1
+--numCoins 5
+--numCoins 10
+--numCoins 15
+
+--respin true
+--respin true
+--respin true
+--respin true
+
+--topRowRespin true
+--topRowRespin true
+--topRowRespin true
+--topRowRespin true
+
+--scatterHook true
+--scatterHook true
+--scatterHook true
+--scatterHook true
+
+--freespins true
+--freespins true
+--freespins true
+--freespins true
+
+--numScatters 1
+--numScatters 2
+--numScatters 3
+--numScatters 4
+--numScatters 5
+
+--freespins true --numFeatures 1
+--freespins true --numFeatures 2
+--freespins true --numFeatures 3
+--freespins true --numFeatures 4
+--freespins true --numFeatures 5
+
+--freespins true --numFeatures 2 --features MORE_COINS,START_ON_LEVEL_2
+--freespins true --features MORE_WILDS,MORE_COINS
+--freespins true --features MORE_WILDS,START_ON_LEVEL_2
+--freespins true --features MORE_WILDS,REMOVE_LOWEST
+
+--freespins true --minCollectionLevel 1
+--freespins true --minCollectionLevel 2
+--freespins true --minCollectionLevel 3
+--freespins true --minCollectionLevel 4
+--freespins true --minCollectionLevel 5
+
+--freespins true --minCollectionLevel 1
+--freespins true --minCollectionLevel 2
+--freespins true --maxCollectionLevel 3
+--freespins true --maxCollectionLevel 4
+--freespins true --maxCollectionLevel 5
+
+--freespins true --minCollectionLevel 2 --maxCollectionLevel 3
+--freespins true --minCollectionLevel 2 --maxCollectionLevel 4
+--freespins true --minCollectionLevel 3 --maxCollectionLevel 4
+--freespins true --minCollectionLevel 4 --maxCollectionLevel 4
+
+--freespins true --minFSWin 1000
+--freespins true --minFSWin 2000
+--freespins true --minFSWin 3000
+--freespins true --minFSWin 4000
+--freespins true --minFSWin 5000
+
+--freespins true --maxFSWin 1000
+--freespins true --maxFSWin 2000
+--freespins true --maxFSWin 2100
+--freespins true --maxFSWin 3000
+--freespins true --maxFSWin 4000
+--freespins true --maxFSWin 5000
+
+--freespins true --minFSWin 1000 --maxFSWin 2000
+--freespins true --minFSWin 2000 --maxFSWin 3000
+--freespins true --minFSWin 2000 --maxFSWin 3100
+--freespins true --minFSWin 3000 --maxFSWin 4100
+
+--freespins true --fsDoubleWild true
+--freespins true --fsDoubleWild true
+--freespins true --fsDoubleWild true
+--freespins true --fsDoubleWild true
+
+--freespins true --fsCoinValue 1666
+--freespins true --fsCoinValue 10
+--freespins true --fsCoinValue 100
+--freespins true --fsCoinValue 50
+
+--freespins true --fsCoinValueEveryLevel 1666
+--freespins true --fsCoinValueEveryLevel 5
+--freespins true --fsCoinValueEveryLevel 10
+--freespins true --fsCoinValueEveryLevel 50
+
+--freespins true --fsCoinValueCollected 1666
+--freespins true --fsCoinValueCollected 10
+--freespins true --fsCoinValueCollected 50
+
+--freespins true --fsCoinValueCollectedEveryLevel 100
+--freespins true --fsCoinValueCollectedEveryLevel 5
+--freespins true --fsCoinValueCollectedEveryLevel 10
+--freespins true --fsCoinValueCollectedEveryLevel 1666
+--freespins true --fsCoinValueCollectedEveryLevel 50
+
+--freespins true --fsStops [1,-2,8,9,11],[2,3,6,12,-1],[1,2,3],[3,4,5,7],[1,21,13,-1]
+--freespins true --fsStops [1,-2,5,9,10],[2,3,6,12,-1],[1,2,3],[13,4,5,7],[1,21,13,-1]
+--freespins true --fsStops [1,-2,7,9,12],[2,3,6,13,-1],[11,2,3],[14,3,5,7],[1,21,13,-1]
+--freespins true --fsStops [1,-2,9,9,15],[2,3,6,2,-1],[11,2,3],[12,5,5,7],[1,21,13,-1]
+--freespins true --fsStops [1,-2,8,9,7],[2,3,6,12,-1],[1,2,3],[3,4,5,7],[1,21,13,-1]
+
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true
+--freespins true --winCap true

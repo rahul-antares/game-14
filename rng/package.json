@@ -1,0 +1,27 @@
+{
+	"name": "rng",
+	"version": "1.0.0",
+	"description": "Game1",
+	"engines": {
+		"node": ">=20",
+		"npm": ">=10"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "npm run build --workspaces --if-present"
+	},
+	"keywords": [],
+	"workspaces": [
+		"core",
+        "service"
+	],
+	"author": "",
+	"license": "ISC",
+	"optionalDependencies": {
+		"@esbuild/darwin-arm64": "^0.24.0",
+		"@rollup/rollup-linux-x64-musl": "4.9.5"
+	},
+	"dependencies": {
+		"deep-diff": "^1.0.2"
+	}
+}

@@ -1,0 +1,22 @@
+{{- $svc := index .Values.services .Release.Name }}
+{{- $autoscaling := default .Values.global.autoscaling $svc.autoscaling }}
+{{- if $autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-hpa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}
+  minReplicas: {{ default 1 $autoscaling.minReplicas }}
+  maxReplicas: {{ default 3 $autoscaling.maxReplicas }}
+  metrics:
+    {{- toYaml $autoscaling.metrics | nindent 4 }}
+  behavior:
+    {{- toYaml $autoscaling.behavior | nindent 4 }}
+{{- end }}

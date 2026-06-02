@@ -1,0 +1,329 @@
+global:
+  pdb:
+    enabled: true
+    minAvailable: 0
+
+  replicaCount: 2
+
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
+
+  podAnnotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+  nodeSelector:
+    cloud.google.com/compute-class: "autopilot"
+
+  # Use topologySpreadConstraints instead of affinity (modern approach)
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+
+  lifecycle:
+    preStop:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - kill -TERM 1 && sleep 10
+
+  terminationGracePeriodSeconds: 30
+
+  image:
+    tag: latest
+    pullPolicy: Always
+    pullSecret: dev-regcred
+
+  # service:
+  #   port: 80
+
+  security:
+    runAsUser: 0
+    allowPrivilegeEscalation: false
+
+  envFrom:
+    configMaps:
+      - bdg7360-config
+
+  volumeMounts:
+    - name: rng-lib
+      mountPath: /rng/lib/librngapi-local.so
+      subPath: librngapi-local.so
+  volumes:
+    - name: rng-lib
+      configMap:
+        name: rng-library-shared
+        items:
+          - key: librngapi-local.so
+            path: librngapi-local.so
+        defaultMode: 0755 # Use octal notation - readable and standard and its show 493 in decimal.
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "150Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1024Mi"
+
+  env:
+    # global env applies to all services
+    - name: ENV
+      value: "prod"
+    - name: LOG_FORMAT
+      value: "json"
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 70
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 80
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Percent
+            value: 25
+            periodSeconds: 120
+          - type: Pods
+            value: 1
+            periodSeconds: 300
+        selectPolicy: Min
+      scaleUp:
+        stabilizationWindowSeconds: 30
+        policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 30
+          - type: Pods
+            value: 2
+            periodSeconds: 30
+        selectPolicy: Max
+
+# Define each service here ---------------------------------------------------------------------------------------->
+services:
+  # App -------------------------------------------------------->
+  bdg736096:
+    image:
+      repository: europe-docker.pkg.dev/stag-env-463210/bdg7360-ar/bdg736096
+
+    ports:
+      - name: http
+        port: 80 # Service port
+        targetPort: 80 # Container port
+        protocol: TCP
+    env:
+      - name: GAME_ID
+        value: "$(GAME_CORE)96"
+      - name: GAME_VERSION
+        value: "$(GAME_VERSION)"
+      - name: RNG_VERSION
+        value: "$(RNG_VERSION)"
+      - name: NATS_HOST
+        value: "$(NATS_HOST)"
+      - name: NATS_PORT
+        value: "$(NATS_PORT)"
+      - name: NUM_THREADS
+        value: "$(NUM_THREADS)"
+      - name: REQ_MAX_AGE
+        value: "$(REQ_MAX_AGE)"
+      - name: ENABLE_EXPRESS
+        value: "$(ENABLE_EXPRESS)"
+      - name: EXPRESS_PORT
+        value: "$(EXPRESS_PORT)"
+      - name: RNG_MAX_RECORDS
+        value: "$(RNG_MAX_RECORDS)"
+      - name: RNG_MAX_HOLD_TIME
+        value: "$(RNG_MAX_HOLD_TIME)"
+      - name: RNG_MONITOR_CHANNEL
+        value: "$(RNG_MONITOR_CHANNEL)"
+  bdg736096wc:
+    image:
+      repository: europe-docker.pkg.dev/stag-env-463210/bdg7360-ar/bdg736096wc
+
+    ports:
+      - name: http
+        port: 80 # Service port
+        targetPort: 80 # Container port
+        protocol: TCP
+    env:
+      - name: GAME_ID
+        value: "$(GAME_CORE)96wc"
+      - name: GAME_VERSION
+        value: "$(GAME_VERSION)"
+      - name: RNG_VERSION
+        value: "$(RNG_VERSION)"
+      - name: NATS_HOST
+        value: "$(NATS_HOST)"
+      - name: NATS_PORT
+        value: "$(NATS_PORT)"
+      - name: NUM_THREADS
+        value: "$(NUM_THREADS)"
+      - name: REQ_MAX_AGE
+        value: "$(REQ_MAX_AGE)"
+      - name: ENABLE_EXPRESS
+        value: "$(ENABLE_EXPRESS)"
+      - name: EXPRESS_PORT
+        value: "$(EXPRESS_PORT)"
+      - name: RNG_MAX_RECORDS
+        value: "$(RNG_MAX_RECORDS)"
+      - name: RNG_MAX_HOLD_TIME
+        value: "$(RNG_MAX_HOLD_TIME)"
+      - name: RNG_MONITOR_CHANNEL
+        value: "$(RNG_MONITOR_CHANNEL)"
+  bdg736094:
+    image:
+      repository: europe-docker.pkg.dev/stag-env-463210/bdg7360-ar/bdg736094
+
+    ports:
+      - name: http
+        port: 80 # Service port
+        targetPort: 80 # Container port
+        protocol: TCP
+    env:
+      - name: GAME_ID
+        value: "$(GAME_CORE)94"
+      - name: GAME_VERSION
+        value: "$(GAME_VERSION)"
+      - name: RNG_VERSION
+        value: "$(RNG_VERSION)"
+      - name: NATS_HOST
+        value: "$(NATS_HOST)"
+      - name: NATS_PORT
+        value: "$(NATS_PORT)"
+      - name: NUM_THREADS
+        value: "$(NUM_THREADS)"
+      - name: REQ_MAX_AGE
+        value: "$(REQ_MAX_AGE)"
+      - name: ENABLE_EXPRESS
+        value: "$(ENABLE_EXPRESS)"
+      - name: EXPRESS_PORT
+        value: "$(EXPRESS_PORT)"
+      - name: RNG_MAX_RECORDS
+        value: "$(RNG_MAX_RECORDS)"
+      - name: RNG_MAX_HOLD_TIME
+        value: "$(RNG_MAX_HOLD_TIME)"
+      - name: RNG_MONITOR_CHANNEL
+        value: "$(RNG_MONITOR_CHANNEL)"
+  bdg736094wc:
+    image:
+      repository: europe-docker.pkg.dev/stag-env-463210/bdg7360-ar/bdg736094wc
+
+    ports:
+      - name: http
+        port: 80 # Service port
+        targetPort: 80 # Container port
+        protocol: TCP
+    env:
+      - name: GAME_ID
+        value: "$(GAME_CORE)94wc"
+      - name: GAME_VERSION
+        value: "$(GAME_VERSION)"
+      - name: RNG_VERSION
+        value: "$(RNG_VERSION)"
+      - name: NATS_HOST
+        value: "$(NATS_HOST)"
+      - name: NATS_PORT
+        value: "$(NATS_PORT)"
+      - name: NUM_THREADS
+        value: "$(NUM_THREADS)"
+      - name: REQ_MAX_AGE
+        value: "$(REQ_MAX_AGE)"
+      - name: ENABLE_EXPRESS
+        value: "$(ENABLE_EXPRESS)"
+      - name: EXPRESS_PORT
+        value: "$(EXPRESS_PORT)"
+      - name: RNG_MAX_RECORDS
+        value: "$(RNG_MAX_RECORDS)"
+      - name: RNG_MAX_HOLD_TIME
+        value: "$(RNG_MAX_HOLD_TIME)"
+      - name: RNG_MONITOR_CHANNEL
+        value: "$(RNG_MONITOR_CHANNEL)"
+  bdg736092:
+    image:
+      repository: europe-docker.pkg.dev/stag-env-463210/bdg7360-ar/bdg736092
+
+    ports:
+      - name: http
+        port: 80 # Service port
+        targetPort: 80 # Container port
+        protocol: TCP
+    env:
+      - name: GAME_ID
+        value: "$(GAME_CORE)92"
+      - name: GAME_VERSION
+        value: "$(GAME_VERSION)"
+      - name: RNG_VERSION
+        value: "$(RNG_VERSION)"
+      - name: NATS_HOST
+        value: "$(NATS_HOST)"
+      - name: NATS_PORT
+        value: "$(NATS_PORT)"
+      - name: NUM_THREADS
+        value: "$(NUM_THREADS)"
+      - name: REQ_MAX_AGE
+        value: "$(REQ_MAX_AGE)"
+      - name: ENABLE_EXPRESS
+        value: "$(ENABLE_EXPRESS)"
+      - name: EXPRESS_PORT
+        value: "$(EXPRESS_PORT)"
+      - name: RNG_MAX_RECORDS
+        value: "$(RNG_MAX_RECORDS)"
+      - name: RNG_MAX_HOLD_TIME
+        value: "$(RNG_MAX_HOLD_TIME)"
+      - name: RNG_MONITOR_CHANNEL
+        value: "$(RNG_MONITOR_CHANNEL)"
+  bdg736092wc:
+    image:
+      repository: europe-docker.pkg.dev/stag-env-463210/bdg7360-ar/bdg736092wc
+
+    ports:
+      - name: http
+        port: 80 # Service port
+        targetPort: 80 # Container port
+        protocol: TCP
+    env:
+      - name: GAME_ID
+        value: "$(GAME_CORE)92wc"
+      - name: GAME_VERSION
+        value: "$(GAME_VERSION)"
+      - name: RNG_VERSION
+        value: "$(RNG_VERSION)"
+      - name: NATS_HOST
+        value: "$(NATS_HOST)"
+      - name: NATS_PORT
+        value: "$(NATS_PORT)"
+      - name: NUM_THREADS
+        value: "$(NUM_THREADS)"
+      - name: REQ_MAX_AGE
+        value: "$(REQ_MAX_AGE)"
+      - name: ENABLE_EXPRESS
+        value: "$(ENABLE_EXPRESS)"
+      - name: EXPRESS_PORT
+        value: "$(EXPRESS_PORT)"
+      - name: RNG_MAX_RECORDS
+        value: "$(RNG_MAX_RECORDS)"
+      - name: RNG_MAX_HOLD_TIME
+        value: "$(RNG_MAX_HOLD_TIME)"
+      - name: RNG_MONITOR_CHANNEL
+        value: "$(RNG_MONITOR_CHANNEL)"

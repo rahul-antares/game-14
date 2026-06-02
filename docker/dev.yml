@@ -1,0 +1,7 @@
+name: rgs
+
+include:
+  - path:
+    - docker-compose.yml
+    - overrides-dev.yml
+

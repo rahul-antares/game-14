@@ -1,0 +1,11 @@
+#pragma once
+
+#include <iostream>
+#include <exception>
+#include <execinfo.h>
+#include <cstdlib>
+#include "colors.h"
+
+#define MAX_FRAMES 100
+
+void printStackTrace();

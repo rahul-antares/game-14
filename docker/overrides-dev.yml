@@ -1,0 +1,4 @@
+services:
+  static-ge1:
+    volumes:
+      - ../static/game/dist:/home/node/game1/static/game/dist
